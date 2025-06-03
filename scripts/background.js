@@ -3,40 +3,60 @@ console.log('Background script Robert IA démarré');
 
 // Gérer l'installation de l'extension
 chrome.runtime.onInstalled.addListener((details) => {
-    console.log('Extension Robert IA installée:', details);
+    console.log('Extension Robert IA installée:', details.reason);
     
     if (details.reason === 'install') {
-        // Première installation
-        console.log('Première installation de Robert IA');
+        console.log('Première installation de l\'extension');
     } else if (details.reason === 'update') {
-        // Mise à jour
-        console.log('Mise à jour de Robert IA');
+        console.log('Extension mise à jour');
+        // Recharger tous les content scripts après une mise à jour
+        reloadAllContentScripts();
     }
 });
 
-// Gérer les messages des content scripts ou popup
+// Recharger les content scripts dans tous les onglets
+async function reloadAllContentScripts() {
+    try {
+        const tabs = await chrome.tabs.query({});
+        
+        for (const tab of tabs) {
+            if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
+                try {
+                    await chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        files: ['scripts/content.js']
+                    });
+                    console.log(`Content script rechargé pour l'onglet ${tab.id}`);
+                } catch (error) {
+                    console.log(`Impossible de recharger le content script pour l'onglet ${tab.id}:`, error);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors du rechargement des content scripts:', error);
+    }
+}
+
+// Gérer les messages depuis les content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Message reçu dans background:', request);
     
-    switch (request.action) {
-        case 'logAnalytics':
-            console.log('Analytics:', request.data);
-            sendResponse({ success: true });
-            break;
-        default:
-            console.log('Action non reconnue:', request.action);
-            sendResponse({ success: false });
-    }
+    // Répondre immédiatement pour éviter les timeouts
+    sendResponse({ received: true });
+    
+    return true;
 });
 
-// Gérer les changements d'onglets
-chrome.tabs.onActivated.addListener((activeInfo) => {
-    console.log('Onglet activé:', activeInfo.tabId);
+// Gérer les erreurs de startup
+chrome.runtime.onStartup.addListener(() => {
+    console.log('Extension Robert IA démarrée');
 });
 
-// Gérer les mises à jour d'URL
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.url) {
-        console.log('Page chargée:', tab.url);
-    }
+// Détecter les suspensions du service worker
+self.addEventListener('activate', event => {
+    console.log('Service Worker activé');
+});
+
+self.addEventListener('install', event => {
+    console.log('Service Worker installé');
 });

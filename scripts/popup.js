@@ -25,10 +25,18 @@ class RobertPopup {
     }
 
     attachEventListeners() {
-        this.chatBtn.addEventListener("click", () => this.openChat());
-        this.verifyBtn.addEventListener("click", () => this.verifyPage());
-        this.summarizeBtn.addEventListener("click", () => this.summarizePage());
-        this.emailBtn.addEventListener("click", () => this.checkEmail());
+        if (this.chatBtn) {
+            this.chatBtn.addEventListener("click", () => this.openChat());
+        }
+        if (this.verifyBtn) {
+            this.verifyBtn.addEventListener("click", () => this.verifyPage());
+        }
+        if (this.summarizeBtn) {
+            this.summarizeBtn.addEventListener("click", () => this.summarizePage());
+        }
+        if (this.emailBtn) {
+            this.emailBtn.addEventListener("click", () => this.checkEmail());
+        }
         
         // Événements du compte
         if (this.accountBtn) {
@@ -53,38 +61,49 @@ class RobertPopup {
         
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            console.log("Onglet actif:", tab.url);
             
-            // Injecter le content script si nécessaire
+            // Vérifier si le contexte de l'extension est valide
+            if (!chrome.runtime?.id) {
+                throw new Error('Extension context invalidated - recharger l\'extension');
+            }
+            
+            // Injecter le content script
             try {
                 await chrome.scripting.executeScript({
                     target: { tabId: tab.id },
                     files: ['scripts/content.js']
                 });
+                console.log("Content script injecté");
             } catch (error) {
-                console.log("Content script déjà présent ou erreur d'injection:", error);
+                console.log("Content script déjà présent:", error);
             }
             
-            // Attendre un peu pour que le script se charge
+            // Attendre et envoyer le message
             setTimeout(async () => {
                 try {
+                    console.log("Envoi du message openChat");
                     await chrome.tabs.sendMessage(tab.id, {
                         action: "openChat",
                         mode: "conversation"
                     });
                     
-                    // Fermer le popup après un délai
+                    console.log("Message envoyé avec succès");
+                    this.setStatus("Chat ouvert", "success");
+                    
+                    // Fermer le popup
                     setTimeout(() => {
                         window.close();
-                    }, 300);
+                    }, 500);
                     
                 } catch (messageError) {
                     console.error("Erreur lors de l'envoi du message:", messageError);
-                    this.setStatus("Erreur: recharger la page", "error");
+                    this.setStatus("Recharger l'extension", "error");
                 }
-            }, 800);
+            }, 1000);
             
         } catch (error) {
-            this.setStatus("Erreur ouverture chat", "error");
+            this.setStatus("Erreur: recharger extension", "error");
             console.error("Erreur:", error);
         }
     }
@@ -367,7 +386,6 @@ class RobertPopup {
                     loginBtn.classList.add('logout');
                 }
             } else {
-                // État par défaut : non connecté
                 if (userNameEl) userNameEl.textContent = 'Non connecté';
                 if (userEmailEl) userEmailEl.textContent = 'Connectez-vous pour accéder à vos données';
                 
@@ -390,7 +408,6 @@ class RobertPopup {
             const result = await chrome.storage.local.get(['isLoggedIn']);
             
             if (result.isLoggedIn) {
-                // Déconnexion de Robert IA
                 await chrome.storage.local.remove(['userInfo', 'isLoggedIn']);
                 this.setStatus("Déconnecté de Robert IA", "success");
                 await this.loadUserInfo();
@@ -399,15 +416,12 @@ class RobertPopup {
                     this.setStatus("Prêt à vous aider", "ready");
                 }, 2000);
             } else {
-                // Redirection vers l'ENT UPHF pour la connexion
                 this.setStatus("Redirection vers Robert IA...", "loading");
                 
-                // Ouvrir l'ENT UPHF dans un nouvel onglet
                 chrome.tabs.create({
                     url: 'https://ent.uphf.fr/'
                 });
                 
-                // Fermer la popup après redirection
                 setTimeout(() => {
                     window.close();
                 }, 500);
@@ -420,7 +434,6 @@ class RobertPopup {
 
     openHistory() {
         this.setStatus("Chargement de l'historique...", "loading");
-        console.log("Ouverture de l'historique");
         setTimeout(() => {
             this.setStatus("Historique non disponible", "error");
         }, 1000);
@@ -429,7 +442,7 @@ class RobertPopup {
     openHelp() {
         this.setStatus("Ouverture de l'aide...", "loading");
         chrome.tabs.create({
-            url: 'https://ent.uphf.fr/' // Temporairement vers ENT UPHF
+            url: 'https://ent.uphf.fr/'
         });
         setTimeout(() => {
             this.setStatus("Prêt à vous aider", "ready");
@@ -439,101 +452,6 @@ class RobertPopup {
 
 // Initialiser au chargement
 document.addEventListener("DOMContentLoaded", () => {
-    new RobertPopup();
-});
-
-document.addEventListener('DOMContentLoaded', function() {
     console.log('Popup Robert IA chargée');
-
-    // Éléments du DOM
-    const chatBtn = document.getElementById('chat-btn');
-    const verifyBtn = document.getElementById('verify-btn');
-    const summarizeBtn = document.getElementById('summarize-btn');
-    const emailBtn = document.getElementById('email-btn');
-    const status = document.getElementById('status');
-
-    // Mettre à jour le statut avec l'URL actuelle
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]) {
-            const url = new URL(tabs[0].url);
-            const statusText = status.querySelector('.status-text');
-            statusText.textContent = url.hostname;
-        }
-    });
-
-    // Event listeners pour les boutons
-    if (chatBtn) {
-        chatBtn.addEventListener('click', () => {
-            console.log('Bouton Chat cliqué');
-            sendMessageToContentScript('openChat');
-            window.close();
-        });
-    }
-
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', () => {
-            console.log('Bouton Vérifier cliqué');
-            handleVerifyPage();
-            window.close();
-        });
-    }
-
-    if (summarizeBtn) {
-        summarizeBtn.addEventListener('click', () => {
-            console.log('Bouton Résumer cliqué');
-            handleSummarizePage();
-            window.close();
-        });
-    }
-
-    if (emailBtn) {
-        emailBtn.addEventListener('click', () => {
-            console.log('Bouton Email cliqué');
-            handleCheckEmail();
-            window.close();
-        });
-    }
-
-    // Fonctions utilitaires
-    function sendMessageToContentScript(action, data = {}) {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: action,
-                    ...data
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        console.log('Erreur:', chrome.runtime.lastError);
-                    }
-                });
-            }
-        });
-    }
-
-    function handleVerifyPage() {
-        const result = {
-            isTrustworthy: Math.random() > 0.3,
-            score: Math.floor(Math.random() * 100),
-            error: "API en développement"
-        };
-        sendMessageToContentScript('showVerificationResult', { result });
-    }
-
-    function handleSummarizePage() {
-        const summary = {
-            summary: "Résumé de la page généré localement. Cette fonctionnalité sera bientôt disponible avec l'API complète.",
-            error: "API en développement"
-        };
-        sendMessageToContentScript('showSummary', { summary });
-    }
-
-    function handleCheckEmail() {
-        const result = {
-            isEmail: true,
-            isDangerous: Math.random() > 0.7,
-            message: "Vérification d'email simulée. API en développement.",
-            error: "API en développement"
-        };
-        sendMessageToContentScript('showEmailResult', { result });
-    }
+    new RobertPopup();
 });
