@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robert IA Extension</title>
+    <link rel="stylesheet" href="../styles/popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <header class="popup-header">
+            <div class="logo-container">
+                <img src="../icons/logo_robert.png" alt="Robert IA" class="logo">
+                <div class="header-text">
+                    <h1 class="popup-title">Robert IA</h1>
+                    <p class="popup-subtitle">Assistant intelligent</p>
+                </div>
+            </div>
+            <button id="account-btn" class="account-btn" title="Mon Compte">
+                <div class="account-icon">👤</div>
+            </button>
+        </header>
+        
+        <main class="popup-content">
+            <div class="feature-grid">
+                <button id="chat-btn" class="feature-btn primary">
+                    <div class="feature-icon">💬</div>
+                    <div class="feature-content">
+                        <h3>Chat IA</h3>
+                        <p>Discuter avec Robert</p>
+                    </div>
+                </button>
+                
+                <button id="verify-btn" class="feature-btn secondary">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-content">
+                        <h3>Vérifier</h3>
+                        <p>Fiabilité de la page</p>
+                    </div>
+                </button>
+                
+                <button id="summarize-btn" class="feature-btn secondary">
+                    <div class="feature-icon">📝</div>
+                    <div class="feature-content">
+                        <h3>Résumer</h3>
+                        <p>Contenu de la page</p>
+                    </div>
+                </button>
+                
+                <button id="email-btn" class="feature-btn secondary">
+                    <div class="feature-icon">📧</div>
+                    <div class="feature-content">
+                        <h3>Email</h3>
+                        <p>Détecter phishing</p>
+                    </div>
+                </button>
+            </div>
+            
+            <div class="status" id="status">
+                <div class="status-indicator"></div>
+                <span class="status-text">Prêt à vous aider</span>
+            </div>
+        </main>
+        
+        <!-- Section Mon Compte (cachée par défaut) -->
+        <div class="account-section" id="account-section" style="display: none;">
+            <div class="account-header">
+                <button id="back-btn" class="back-btn">←</button>
+                <h2>Mon Compte</h2>
+            </div>
+            
+            <div class="account-content">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <h3 id="user-name">Utilisateur</h3>
+                        <p id="user-email">Non connecté</p>
+                    </div>
+                </div>
+                
+                <div class="account-actions">
+                    <button id="login-btn" class="account-action-btn primary">
+                        <div class="action-icon">🔑</div>
+                        <div class="action-content">
+                            <h4>Se connecter</h4>
+                            <p>Connectez-vous à Robert IA</p>
+                        </div>
+                    </button>
+                    
+                    <button id="history-btn" class="account-action-btn">
+                        <div class="action-icon">📝</div>
+                        <div class="action-content">
+                            <h4>Historique</h4>
+                            <p>Voir vos conversations</p>
+                        </div>
+                    </button>
+                    
+                    <button id="help-btn" class="account-action-btn">
+                        <div class="action-icon">❓</div>
+                        <div class="action-content">
+                            <h4>Aide</h4>
+                            <p>Support et documentation</p>
+                        </div>
+                    </button>
+                </div>
+                
+                <div class="account-footer">
+                    <div class="version-info">
+                        <span>Version 1.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../scripts/popup.js"></script>
+</body>
+</html>

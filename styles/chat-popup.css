@@ -1,0 +1,222 @@
+.robert-chat-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    height: 600px;
+    background: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 12px;
+    z-index: 2147483647;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #ffffff;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.8);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.chat-popup-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-popup-header {
+    padding: 1.5rem;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    object-fit: cover;
+}
+
+.popup-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f97316;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.popup-subtitle {
+    color: #a1a1aa;
+    font-size: 0.875rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #a1a1aa;
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+.chat-popup-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.chat-popup-welcome {
+    padding: 1.5rem;
+    background: #2a2a2a;
+    border-radius: 0.75rem;
+    text-align: center;
+    border: 1px solid #3a3a3a;
+}
+
+.chat-popup-welcome h3 {
+    margin: 0 0 0.5rem 0;
+    color: #f97316;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.chat-popup-welcome p {
+    margin: 0 0 1rem 0;
+    color: #a1a1aa;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.predefined-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.question-btn {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 0.875rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    text-align: left;
+    font-family: inherit;
+    line-height: 1.3;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+}
+
+.question-btn:hover {
+    background: #ea580c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgb(0 0 0 / 0.2);
+}
+
+.chat-message {
+    padding: 0.875rem;
+    border-radius: 0.75rem;
+    margin: 0.25rem 0;
+    max-width: 85%;
+    word-wrap: break-word;
+    line-height: 1.4;
+    font-size: 0.875rem;
+}
+
+.chat-message.user {
+    background: #f97316;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.chat-message.assistant {
+    background: #2a2a2a;
+    color: #ffffff;
+    align-self: flex-start;
+    border: 1px solid #3a3a3a;
+}
+
+.chat-popup-input-container {
+    padding: 1rem;
+    background: #1a1a1a;
+    border-top: 1px solid #333333;
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.chat-input {
+    flex: 1;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 0.75rem;
+    padding: 0.875rem;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: #f97316;
+}
+
+.chat-input::placeholder {
+    color: #71717a;
+}
+
+.send-btn {
+    background: #f97316;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    color: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.send-btn:hover {
+    background: #ea580c;
+}
