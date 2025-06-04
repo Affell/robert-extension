@@ -3,10 +3,13 @@
   "name": "Extension Robert IA",
   "version": "1.0",
   "description": "Extension pour discuter avec l'IA Robert depuis n'importe quelle page",
-  "permissions": ["tabs", "activeTab", "storage", "scripting"],
+  "permissions": ["tabs", "activeTab", "storage", "scripting", "cookies", "identity"],
   "host_permissions": [
     "http://*.uphf.fr/*",
     "https://*.uphf.fr/*",
+    "http://localhost:5000/*",
+    "http://localhost/*",
+    "https://localhost/*",
     "<all_urls>"
   ],
   "action": {
@@ -40,7 +43,10 @@
     {
       "resources": [
         "icons/logo_robert.png",
-        "styles/popup.css"
+        "styles/popup.css",
+        "scripts/content.js",
+        "templates/chat-widget.html",
+        "templates/floating-logo.html"
       ],
       "matches": ["<all_urls>"]
     }

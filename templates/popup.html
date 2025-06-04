@@ -78,24 +78,17 @@
                     </div>
                 </div>
                 
-                <div class="account-actions">
-                    <button id="login-btn" class="account-action-btn primary">
-                        <div class="action-icon">🔑</div>
+                <!-- Section pour utilisateur connecté uniquement -->
+                <div class="account-actions" id="logged-in-actions">
+                    <button id="logout-btn" class="account-action-btn logout">
+                        <div class="action-icon">🚪</div>
                         <div class="action-content">
-                            <h4>Se connecter</h4>
-                            <p>Connectez-vous à Robert IA</p>
+                            <h4>Se déconnecter</h4>
+                            <p>Déconnexion de Robert IA</p>
                         </div>
                     </button>
                     
-                    <button id="history-btn" class="account-action-btn">
-                        <div class="action-icon">📝</div>
-                        <div class="action-content">
-                            <h4>Historique</h4>
-                            <p>Voir vos conversations</p>
-                        </div>
-                    </button>
-                    
-                    <button id="help-btn" class="account-action-btn">
+                    <button id="help-btn-logged" class="account-action-btn">
                         <div class="action-icon">❓</div>
                         <div class="action-content">
                             <h4>Aide</h4>
@@ -108,6 +101,66 @@
                     <div class="version-info">
                         <span>Version 1.0</span>
                     </div>
+                    <div class="connection-status">
+                        <div class="status-indicator connected"></div>
+                        <span>Connecté à Robert IA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section de connexion -->
+        <div class="login-section" id="login-section" style="display: none;">
+            <div class="login-header">
+                <h2>Connexion à Robert IA</h2>
+                <p>Connectez-vous pour accéder à toutes les fonctionnalités</p>
+            </div>
+            
+            <div class="login-content">
+                <form class="login-form" id="login-form">
+                    <div class="form-group">
+                        <label for="username">Email</label>
+                        <input type="email" id="username" name="username" class="form-input" placeholder="votre@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Mot de passe</label>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="Votre mot de passe" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="login-submit-btn" id="login-submit">
+                            <span class="login-btn-text">Se connecter</span>
+                            <div class="login-spinner" style="display: none;">⚡</div>
+                        </button>
+                    </div>
+                    
+                    <!-- Message d'erreur juste après le bouton de connexion -->
+                    <div class="login-error" id="login-error" style="display: none;">
+                        <p class="error-message"></p>
+                    </div>
+                    
+                    <div class="login-links">
+                        <button type="button" class="link-btn" id="forgot-password-btn">
+                            Mot de passe oublié ?
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="login-separator">
+                    <div class="separator-line"></div>
+                    <span>ou</span>
+                    <div class="separator-line"></div>
+                </div>
+                
+                <div class="login-alt-actions">
+                    <button id="create-account-btn" class="create-account-btn">
+                        <div class="action-icon">✨</div>
+                        <div class="action-content">
+                            <h4>Créer un compte</h4>
+                            <p>Rejoignez Robert IA gratuitement</p>
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
