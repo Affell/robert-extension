@@ -72,13 +72,11 @@ window.ChatPopup = class ChatPopup {
         });
     }    handlePredefinedQuestion(question) {
         const welcome = this.popup.querySelector('#chat-popup-welcome');
-        if (welcome) welcome.style.display = 'none';
+        if (welcome) welcome.classList.add('hidden');
 
         this.addMessage(question, 'user');
         this.sendQuestionToAPI(question);
-    }
-
-    sendMessage() {
+    }    sendMessage() {
         const input = this.popup.querySelector('#chat-popup-input');
         if (!input) return;
         
@@ -86,14 +84,14 @@ window.ChatPopup = class ChatPopup {
         if (!message) return;
 
         const welcome = this.popup.querySelector('#chat-popup-welcome');
-        if (welcome && welcome.style.display !== 'none') {
-            welcome.style.display = 'none';
+        if (welcome && !welcome.classList.contains('hidden')) {
+            welcome.classList.add('hidden');
         }
           
         this.addMessage(message, 'user');
         input.value = '';
         this.sendQuestionToAPI(message);
-    }    async sendQuestionToAPI(question) {
+    }async sendQuestionToAPI(question) {
         try {
             this.addTypingIndicator();
             
@@ -184,38 +182,22 @@ window.ChatPopup = class ChatPopup {
         html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
         html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
         html = html.replace(/_(.*?)_/g, '<em>$1</em>');
-        html = html.replace(/`(.*?)`/g, '<code style="background: #333; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+        html = html.replace(/`(.*?)`/g, '<code class="markdown-code">$1</code>');
         
         // Listes et titres
-        html = html.replace(/^[-*]\s(.+)/gm, '<li style="margin-left: 1rem;">$1</li>');
-        html = html.replace(/^### (.*)/gm, '<h3 style="color: #f97316; margin: 0.5rem 0; font-size: 1rem;">$1</h3>');
-        html = html.replace(/^## (.*)/gm, '<h2 style="color: #f97316; margin: 0.5rem 0; font-size: 1.125rem;">$1</h2>');
-        html = html.replace(/^# (.*)/gm, '<h1 style="color: #f97316; margin: 0.5rem 0; font-size: 1.25rem;">$1</h1>');
+        html = html.replace(/^[-*]\s(.+)/gm, '<li class="markdown-li">$1</li>');
+        html = html.replace(/^### (.*)/gm, '<h3 class="markdown-h3">$1</h3>');
+        html = html.replace(/^## (.*)/gm, '<h2 class="markdown-h2">$1</h2>');
+        html = html.replace(/^# (.*)/gm, '<h1 class="markdown-h1">$1</h1>');
         
         // Boutons pour liens
         html = this.convertLinksToButtons(html);
         
         return html;
-    }
-
-    convertLinksToButtons(html) {
-        const buttonStyle = (bgColor, hoverColor) => `
-            background: ${bgColor}; 
-            color: white; 
-            border: none; 
-            padding: 0.5rem 1rem; 
-            border-radius: 0.5rem; 
-            cursor: pointer; 
-            margin: 0.25rem 0.25rem 0.25rem 0; 
-            font-size: 0.875rem; 
-            display: inline-block;
-            transition: background 0.2s;
-        `;
-
+    }    convertLinksToButtons(html) {
         // Liens markdown [texte](url)
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
-            return `<button onclick="window.open('${url}', '_blank')" style="${buttonStyle('#f97316')}"
-                onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+            return `<button onclick="window.open('${url}', '_blank')" class="link-btn">
                 🔗 ${text}
             </button>`;
         });
@@ -223,8 +205,7 @@ window.ChatPopup = class ChatPopup {
         // URLs directes
         html = html.replace(/(https?:\/\/[^\s<>"]+)/gi, (url) => {
             const displayText = url.length > 30 ? url.substring(0, 30) + '...' : url;
-            return `<button onclick="window.open('${url}', '_blank')" style="${buttonStyle('#2563eb')}"
-                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+            return `<button onclick="window.open('${url}', '_blank')" class="url-btn">
                 🌐 ${displayText}
             </button>`;
         });

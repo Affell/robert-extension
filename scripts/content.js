@@ -82,7 +82,8 @@ if (typeof window.RobertExtension === 'undefined') {
                     "openChat": () => this.openChatWidget(),
                     "showVerificationResult": () => {},
                     "showSummary": () => {},
-                    "showEmailResult": () => {}
+                    "showEmailResult": () => {},
+                    "authStateChanged": () => this.handleAuthStateChanged(request.isLoggedIn)
                 };
 
                 try {
@@ -98,7 +99,7 @@ if (typeof window.RobertExtension === 'undefined') {
                 
                 return true;
             });
-        }        openChatWidget() {
+        }openChatWidget() {
             if (this.chatPopup) {
                 this.closeChatWidget();
                 return;
@@ -169,26 +170,24 @@ if (typeof window.RobertExtension === 'undefined') {
             return response.data;
         }        handleQuestion(question) {
             const welcome = this.chatPopup.querySelector('#robert-chat-welcome');
-            if (welcome) welcome.style.display = 'none';
+            if (welcome) welcome.classList.add('hidden');
 
             this.addMessage(question, 'user');
             this.sendQuestionToAPI(question);
-        }
-
-        sendMessage() {
+        }        sendMessage() {
             const input = this.chatPopup.querySelector('#robert-chat-input');
             const message = input.value.trim();
             if (!message) return;
 
             const welcome = this.chatPopup.querySelector('#robert-chat-welcome');
-            if (welcome && welcome.style.display !== 'none') {
-                welcome.style.display = 'none';
+            if (welcome && !welcome.classList.contains('hidden')) {
+                welcome.classList.add('hidden');
             }
             
             this.addMessage(message, 'user');
             input.value = '';
             this.sendQuestionToAPI(message);
-        }        async sendQuestionToAPI(question) {
+        }async sendQuestionToAPI(question) {
             try {
                 this.addTypingIndicator();
                 
@@ -256,9 +255,7 @@ if (typeof window.RobertExtension === 'undefined') {
             
             messagesContainer.appendChild(messageEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        parseMarkdown(text) {
+        }        parseMarkdown(text) {
             // Convertir les sauts de ligne
             let html = text.replace(/\n/g, '<br>');
             
@@ -271,30 +268,19 @@ if (typeof window.RobertExtension === 'undefined') {
             html = html.replace(/_(.*?)_/g, '<em>$1</em>');
             
             // Code inline (`code`)
-            html = html.replace(/`(.*?)`/g, '<code style="background: #333; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+            html = html.replace(/`(.*?)`/g, '<code class="robert-markdown-code">$1</code>');
             
             // Listes non ordonnées (- item ou * item)
-            html = html.replace(/^[-*]\s(.+)/gm, '<li style="margin-left: 1rem;">$1</li>');
+            html = html.replace(/^[-*]\s(.+)/gm, '<li class="robert-markdown-li">$1</li>');
             
             // Titres (# Titre)
-            html = html.replace(/^### (.*)/gm, '<h3 style="color: #f97316; margin: 0.5rem 0; font-size: 1rem;">$1</h3>');
-            html = html.replace(/^## (.*)/gm, '<h2 style="color: #f97316; margin: 0.5rem 0; font-size: 1.125rem;">$1</h2>');
-            html = html.replace(/^# (.*)/gm, '<h1 style="color: #f97316; margin: 0.5rem 0; font-size: 1.25rem;">$1</h1>');
+            html = html.replace(/^### (.*)/gm, '<h3 class="robert-markdown-h3">$1</h3>');
+            html = html.replace(/^## (.*)/gm, '<h2 class="robert-markdown-h2">$1</h2>');
+            html = html.replace(/^# (.*)/gm, '<h1 class="robert-markdown-h1">$1</h1>');
             
             // Liens [texte](url) - convertis en boutons
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
-                return `<button onclick="window.open('${url}', '_blank')" style="
-                    background: #f97316; 
-                    color: white; 
-                    border: none; 
-                    padding: 0.5rem 1rem; 
-                    border-radius: 0.5rem; 
-                    cursor: pointer; 
-                    margin: 0.25rem 0.25rem 0.25rem 0; 
-                    font-size: 0.875rem; 
-                    display: inline-block;
-                    transition: background 0.2s;
-                " onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+                return `<button onclick="window.open('${url}', '_blank')" class="robert-link-btn">
                     🔗 ${text}
                 </button>`;
             });
@@ -302,27 +288,27 @@ if (typeof window.RobertExtension === 'undefined') {
             // URLs simples (http/https) - convertis en boutons
             html = html.replace(/(https?:\/\/[^\s<>"]+)/gi, (url) => {
                 const displayText = url.length > 30 ? url.substring(0, 30) + '...' : url;
-                return `<button onclick="window.open('${url}', '_blank')" style="
-                    background: #2563eb; 
-                    color: white; 
-                    border: none; 
-                    padding: 0.5rem 1rem; 
-                    border-radius: 0.5rem; 
-                    cursor: pointer; 
-                    margin: 0.25rem 0.25rem 0.25rem 0; 
-                    font-size: 0.875rem; 
-                    display: inline-block;
-                    transition: background 0.2s;
-                " onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                return `<button onclick="window.open('${url}', '_blank')" class="robert-url-btn">
                     🌐 ${displayText}
                 </button>`;
             });
             
             return html;
-        }        closeChatWidget() {
+        }closeChatWidget() {
             if (this.chatPopup) {
                 this.chatPopup.remove();
                 this.chatPopup = null;
+            }
+        }        handleAuthStateChanged(isLoggedIn) {
+            console.log('État d\'authentification changé:', isLoggedIn);
+            
+            if (!isLoggedIn) {
+                // L'utilisateur s'est déconnecté - supprimer le logo flottant et fermer le chat
+                this.removeFloatingLogo();
+                this.closeChatWidget();
+            } else {
+                // L'utilisateur s'est connecté - vérifier si on doit afficher le logo
+                this.checkAuthAndUPHF();
             }
         }
     }

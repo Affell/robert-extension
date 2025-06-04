@@ -718,6 +718,44 @@ body {
     75% { transform: translateX(5px); }
 }
 
+/* Classes utilitaires pour popup.js */
+.hidden {
+    display: none !important;
+}
+
+.flex {
+    display: flex !important;
+}
+
+.block {
+    display: block !important;
+}
+
+.inline {
+    display: inline !important;
+}
+
+/* Classes pour les indicateurs de statut */
+.status-ready {
+    background-color: #22c55e !important;
+    animation: pulse 2s infinite !important;
+}
+
+.status-loading {
+    background-color: #f97316 !important;
+    animation: pulse 1s infinite !important;
+}
+
+.status-success {
+    background-color: #22c55e !important;
+    animation: pulse 2s infinite !important;
+}
+
+.status-error {
+    background-color: #ef4444 !important;
+    animation: pulse 2s infinite !important;
+}
+
 /* Responsive pour les petits écrans */
 @media (max-height: 600px) {
     .login-content {

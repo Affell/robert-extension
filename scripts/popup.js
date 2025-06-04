@@ -1,14 +1,18 @@
-class RobertPopup {
-    constructor() {
+class RobertPopup {    constructor() {
+        console.log('=== Initialisation de RobertPopup ===');
         this.apiBaseUrl = 'http://localhost:5000';
         this.isLoggedIn = false;
-        this.initializeElements();
-        this.attachEventListeners();
-        this.checkAuthOnStartup();
-        this.testAPIConnection();
-    }
-
-    initializeElements() {
+        
+        // Utiliser setTimeout pour s'assurer que le DOM est complètement chargé
+        setTimeout(() => {
+            this.initializeElements();
+            this.attachEventListeners();
+            this.checkAuthOnStartup();
+            this.testAPIConnection();
+        }, 100);
+    }    initializeElements() {
+        console.log('Initialisation des éléments DOM...');
+        
         // Éléments principaux
         this.statusElement = document.getElementById("status");
         this.mainContent = document.querySelector(".popup-content");
@@ -33,9 +37,19 @@ class RobertPopup {
         this.forgotPasswordBtn = document.getElementById("forgot-password-btn");
         this.createAccountBtn = document.getElementById("create-account-btn");
         this.loginError = document.getElementById("login-error");
-    }
-
-    attachEventListeners() {
+        
+        // Debug: vérifier que les éléments critiques sont trouvés
+        console.log('Éléments DOM trouvés:', {
+            statusElement: !!this.statusElement,
+            mainContent: !!this.mainContent,
+            accountSection: !!this.accountSection,
+            loginSection: !!this.loginSection,
+            backBtn: !!this.backBtn,
+            loginForm: !!this.loginForm
+        });
+    }attachEventListeners() {
+        console.log('Attachement des event listeners...');
+        
         // Fonctionnalités principales (uniquement si connecté)
         if (this.chatBtn) {
             this.chatBtn.addEventListener("click", () => this.openChat());
@@ -52,10 +66,21 @@ class RobertPopup {
         
         // Navigation du compte
         if (this.accountBtn) {
-            this.accountBtn.addEventListener("click", () => this.showAccountSection());
+            this.accountBtn.addEventListener("click", () => {
+                console.log('Bouton Mon Compte cliqué');
+                this.showAccountSection();
+            });
         }
         if (this.backBtn) {
-            this.backBtn.addEventListener("click", () => this.hideAccountSection());
+            console.log('Attachement du listener pour le bouton retour');
+            this.backBtn.addEventListener("click", (e) => {
+                console.log('Bouton retour cliqué');
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideAccountSection();
+            });
+        } else {
+            console.error('Bouton retour non trouvé dans le DOM');
         }
         if (this.logoutBtn) {
             this.logoutBtn.addEventListener("click", () => this.handleLogout());
@@ -73,19 +98,36 @@ class RobertPopup {
         }
         if (this.createAccountBtn) {
             this.createAccountBtn.addEventListener("click", () => this.createAccount());
-        }
+        }        
+        console.log('Event listeners attachés avec succès');
     }
 
     async checkAuthOnStartup() {
         try {
-            const result = await chrome.storage.local.get(['authToken']);
-            if (result.authToken) {
+            console.log('Vérification de l\'état d\'authentification au démarrage...');
+            const result = await chrome.storage.local.get(['authToken', 'isLoggedIn', 'userInfo']);
+            
+            console.log('Données stockées:', {
+                hasToken: !!result.authToken,
+                isLoggedIn: result.isLoggedIn,
+                hasUserInfo: !!result.userInfo
+            });
+            
+            if (result.authToken && result.isLoggedIn && result.userInfo) {
+                console.log('Token et données utilisateur trouvés, vérification de la validité...');
+                // Tenter de vérifier la validité du token
+                await this.verifyCurrentUser();
+            } else if (result.authToken && result.isLoggedIn) {
+                console.log('Token trouvé mais données utilisateur manquantes, re-vérification...');
                 await this.verifyCurrentUser();
             } else {
+                console.log('Aucune session valide trouvée, affichage de l\'interface de connexion');
+                await this.clearAuthData(); // Nettoyer les données incomplètes
                 this.showLoginInterface();
             }
         } catch (error) {
             console.error('Erreur lors de la vérification d\'authentification:', error);
+            await this.clearAuthData(); // Nettoyer en cas d'erreur
             this.showLoginInterface();
         }
     }
@@ -97,6 +139,7 @@ class RobertPopup {
                 throw new Error('Aucun token disponible');
             }
 
+            console.log('Vérification du token auprès du serveur...');
             const response = await this.makeAuthenticatedRequest('/auth/me', {
                 method: 'GET'
             });
@@ -115,25 +158,33 @@ class RobertPopup {
                 }
 
                 if (user) {
+                    const userInfo = {
+                        name: user.name || user.username || user.email || 'Utilisateur',
+                        email: user.email || 'email@example.com',
+                        id: user.id || user._id || user.user_id || 1
+                    };
+                    
                     await chrome.storage.local.set({
                         isLoggedIn: true,
-                        userInfo: {
-                            name: user.name || user.username || user.email || 'Utilisateur',
-                            email: user.email || 'email@example.com',
-                            id: user.id || user._id || user.user_id || 1
-                        }
+                        userInfo: userInfo
                     });
                     
+                    console.log('Utilisateur vérifié avec succès:', user.email);
                     this.isLoggedIn = true;
-                    this.showMainInterface();
-                    this.updateStatus();
+                    
+                    // S'assurer que l'interface est mise à jour correctement
+                    setTimeout(() => {
+                        this.showMainInterface();
+                        this.updateStatus();
+                    }, 100);
+                    
                     return;
                 }
             }
             
             throw new Error('Structure de réponse invalide de /auth/me');
         } catch (error) {
-            console.error('Erreur de vérification utilisateur:', error);
+            console.error('Erreur de vérification utilisateur (token probablement expiré):', error);
             await this.clearAuthData();
             this.showLoginInterface();
         }
@@ -143,46 +194,92 @@ class RobertPopup {
         this.isLoggedIn = false;
         
         // Masquer l'interface principale
-        if (this.mainContent) this.mainContent.style.display = 'none';
-        if (this.accountSection) this.accountSection.style.display = 'none';
+        if (this.mainContent) this.mainContent.classList.add('hidden');
+        if (this.accountSection) this.accountSection.classList.add('hidden');
         
         // Afficher uniquement le portail de connexion
         if (this.loginSection) {
-            this.loginSection.style.display = 'flex';
+            this.loginSection.classList.remove('hidden');
+            this.loginSection.classList.add('flex');
         }
         
         this.setStatus("Connexion requise", "error");
         this.clearLoginForm();
-    }
-
-    showMainInterface() {
+    }    showMainInterface() {
+        console.log('Affichage de l\'interface principale');
         this.isLoggedIn = true;
         
         // Masquer le portail de connexion
-        if (this.loginSection) this.loginSection.style.display = 'none';
+        if (this.loginSection) {
+            this.loginSection.classList.add('hidden');
+            this.loginSection.classList.remove('flex');
+            this.loginSection.style.display = 'none';
+        }
+        
+        // Masquer la section compte si elle était ouverte
+        if (this.accountSection) {
+            this.accountSection.classList.add('hidden');
+            this.accountSection.classList.remove('flex');
+            this.accountSection.style.display = 'none';
+        }
         
         // Afficher l'interface principale
-        if (this.mainContent) this.mainContent.style.display = 'flex';
-        if (this.accountSection) this.accountSection.style.display = 'none';
+        if (this.mainContent) {
+            this.mainContent.classList.remove('hidden');
+            this.mainContent.classList.add('flex');
+            this.mainContent.style.display = 'flex';
+        }
         
+        // Charger les informations utilisateur
         this.loadUserInfo();
+        
+        console.log('Interface principale affichée avec succès');
     }
 
     showAccountSection() {
-        if (!this.isLoggedIn) return;
+        if (!this.isLoggedIn) {
+            console.warn('Tentative d\'affichage de la section compte sans être connecté');
+            return;
+        }
+        
+        console.log('Affichage de la section Mon Compte');
         
         if (this.accountSection && this.mainContent) {
-            this.accountSection.style.display = "flex";
-            this.mainContent.style.display = "none";
+            // Masquer l'interface principale
+            this.mainContent.classList.add('hidden');
+            this.mainContent.classList.remove('flex');
+            
+            // Afficher la section compte
+            this.accountSection.classList.remove('hidden');
+            this.accountSection.classList.add('flex');
+            this.accountSection.style.display = 'flex';
+            
+            // S'assurer que les informations utilisateur sont à jour
+            this.loadUserInfo();
+        } else {
+            console.error('Éléments DOM account-section ou main-content non trouvés');
         }
     }
 
     hideAccountSection() {
-        if (!this.isLoggedIn) return;
+        if (!this.isLoggedIn) {
+            console.warn('Tentative de masquage de la section compte sans être connecté');
+            return;
+        }
+        
+        console.log('Masquage de la section Mon Compte');
         
         if (this.accountSection && this.mainContent) {
-            this.accountSection.style.display = "none";
-            this.mainContent.style.display = "flex";
+            // Masquer la section compte
+            this.accountSection.classList.add('hidden');
+            this.accountSection.classList.remove('flex');
+            this.accountSection.style.display = 'none';
+            
+            // Afficher l'interface principale
+            this.mainContent.classList.remove('hidden');
+            this.mainContent.classList.add('flex');
+        } else {
+            console.error('Éléments DOM account-section ou main-content non trouvés');
         }
     }
 
@@ -525,7 +622,19 @@ class RobertPopup {
     }
 
     async clearAuthData() {
+        // Nettoyer tout le storage lié à l'authentification
         await chrome.storage.local.remove(['authToken', 'userInfo', 'isLoggedIn']);
+        
+        // Aussi nettoyer les cookies si nécessaire
+        try {
+            await chrome.cookies.removeAll({
+                domain: 'localhost'
+            });
+        } catch (error) {
+            console.log('Nettoyage des cookies échoué (normal):', error);
+        }
+        
+        console.log('Données d\'authentification entièrement nettoyées');
     }
 
     async handleLoginSubmit(event) {
@@ -557,11 +666,13 @@ class RobertPopup {
         
         this.setLoginLoading(true);
         this.hideLoginError();
-        
-        try {
+          try {
             const loginResult = await this.authenticateUser(email, password);
             
             if (loginResult.success) {
+                console.log('Connexion réussie, mise à jour des données...');
+                
+                // Sauvegarder les données d'authentification
                 await chrome.storage.local.set({
                     authToken: loginResult.token,
                     isLoggedIn: true,
@@ -572,13 +683,27 @@ class RobertPopup {
                     }
                 });
                 
-                this.setStatus("Connexion réussie", "success");
-                this.isLoggedIn = true;
-                this.showMainInterface();
+                console.log('Données d\'authentification sauvegardées');
                 
+                // Mettre à jour l'état local immédiatement
+                this.isLoggedIn = true;
+                
+                // Afficher l'interface principale immédiatement
+                this.showMainInterface();
+                this.setStatus("Connexion réussie", "success");
+                
+                // Charger les informations utilisateur
+                await this.loadUserInfo();
+                
+                // Mettre à jour le statut après un court délai
                 setTimeout(() => {
                     this.updateStatus();
-                }, 2000);
+                }, 1000);
+                
+                // Notifier les content scripts du changement d'état
+                this.notifyAuthStateChange(true);
+                
+                console.log('Interface mise à jour - connexion terminée');
                 
             } else {
                 this.showLoginError(loginResult.error || 'Identifiants incorrects');
@@ -666,39 +791,60 @@ class RobertPopup {
         try {
             this.setStatus("Déconnexion...", "loading");
             
+            // Essayer de se déconnecter du serveur
             try {
                 await this.makeAuthenticatedRequest('/auth/logout', {
                     method: 'POST'
                 });
+                console.log('Déconnexion serveur réussie');
             } catch (error) {
+                console.log('Déconnexion serveur échouée, nettoyage local forcé:', error);
                 // Continuer même si la révocation échoue
             }
             
+            // Nettoyer les données locales
             await this.clearAuthData();
             this.isLoggedIn = false;
+            
+            // Mettre à jour l'interface
             this.showLoginInterface();
+            this.setStatus("Déconnecté", "ready");
             
             // Notifier tous les onglets du changement d'état de connexion
             try {
                 const tabs = await chrome.tabs.query({});
+                const promises = [];
+                
                 for (const tab of tabs) {
-                    if (tab.url.startsWith('http://') || tab.url.startsWith('https://')) {
-                        try {
-                            await chrome.tabs.sendMessage(tab.id, {
+                    if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+                        promises.push(
+                            chrome.tabs.sendMessage(tab.id, {
                                 action: "authStateChanged",
                                 isLoggedIn: false
-                            });
-                        } catch (error) {
-                            // Ignorer les erreurs si le content script n'est pas présent
-                        }
+                            }).catch(error => {
+                                // Ignorer les erreurs si le content script n'est pas présent
+                                console.log(`Impossible de notifier l'onglet ${tab.id}:`, error);
+                            })
+                        );
                     }
                 }
+                
+                // Attendre que toutes les notifications soient envoyées
+                await Promise.allSettled(promises);
+                console.log('Notification de déconnexion envoyée à tous les onglets');
+                
             } catch (error) {
                 console.log('Erreur lors de la notification des onglets:', error);
             }
             
         } catch (error) {
+            console.error('Erreur lors de la déconnexion:', error);
             this.setStatus("Erreur de déconnexion", "error");
+            
+            // Forcer le nettoyage même en cas d'erreur
+            await this.clearAuthData();
+            this.isLoggedIn = false;
+            this.showLoginInterface();
         }
     }
 
@@ -792,8 +938,14 @@ class RobertPopup {
         
         if (submitBtn) {
             submitBtn.disabled = loading;
-            if (btnText) btnText.style.display = loading ? 'none' : 'inline';
-            if (spinner) spinner.style.display = loading ? 'inline' : 'none';
+            if (btnText) {
+                btnText.classList.toggle('hidden', loading);
+                btnText.classList.toggle('inline', !loading);
+            }
+            if (spinner) {
+                spinner.classList.toggle('hidden', !loading);
+                spinner.classList.toggle('inline', loading);
+            }
         }
     }
 
@@ -803,13 +955,14 @@ class RobertPopup {
             if (errorMessage) {
                 errorMessage.textContent = message;
             }
-            this.loginError.style.display = 'block';
+            this.loginError.classList.remove('hidden');
+            this.loginError.classList.add('block');
         }
     }
 
     hideLoginError() {
         if (this.loginError) {
-            this.loginError.style.display = 'none';
+            this.loginError.classList.add('hidden');
         }
     }
 
@@ -819,20 +972,11 @@ class RobertPopup {
         
         statusText.textContent = text;
         
-        const colors = {
-            ready: "#22c55e",
-            loading: "#f97316", 
-            success: "#22c55e",
-            error: "#ef4444"
-        };
+        // Retirer toutes les classes de statut existantes
+        statusIndicator.classList.remove('status-ready', 'status-loading', 'status-success', 'status-error');
         
-        statusIndicator.style.backgroundColor = colors[type];
-        
-        if (type === "loading") {
-            statusIndicator.style.animation = "pulse 1s infinite";
-        } else {
-            statusIndicator.style.animation = "pulse 2s infinite";
-        }
+        // Ajouter la nouvelle classe de statut
+        statusIndicator.classList.add(`status-${type}`);
     }
 
     async updateStatus() {
@@ -904,6 +1048,64 @@ class RobertPopup {
                 confidence: 0,
                 error: "API non disponible"
             };
+        }
+    }
+
+    // Méthode utilitaire pour forcer un nettoyage complet (debug)
+    async forceCompleteLogout() {
+        console.log('Forçage d\'un nettoyage complet...');
+        
+        // Nettoyer le storage
+        await chrome.storage.local.clear();
+        
+        // Nettoyer les cookies
+        try {
+            const cookies = await chrome.cookies.getAll({ domain: 'localhost' });
+            for (const cookie of cookies) {
+                await chrome.cookies.remove({
+                    url: `http${cookie.secure ? 's' : ''}://${cookie.domain}${cookie.path}`,
+                    name: cookie.name
+                });
+            }
+        } catch (error) {
+            console.log('Nettoyage des cookies échoué:', error);
+        }
+        
+        // Réinitialiser l'état
+        this.isLoggedIn = false;
+        this.showLoginInterface();
+        this.setStatus("Nettoyage complet effectué", "ready");
+        
+        console.log('Nettoyage complet terminé');
+    }
+
+    // Méthode pour notifier les content scripts du changement d'état d'authentification
+    async notifyAuthStateChange(isLoggedIn) {
+        try {
+            console.log(`Notification du changement d'état d'authentification: ${isLoggedIn}`);
+            const tabs = await chrome.tabs.query({});
+            const promises = [];
+            
+            for (const tab of tabs) {
+                if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+                    promises.push(
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: "authStateChanged",
+                            isLoggedIn: isLoggedIn
+                        }).catch(error => {
+                            // Ignorer les erreurs si le content script n'est pas présent
+                            console.log(`Impossible de notifier l'onglet ${tab.id}:`, error);
+                        })
+                    );
+                }
+            }
+            
+            // Attendre que toutes les notifications soient envoyées
+            await Promise.allSettled(promises);
+            console.log('Notification d\'état d\'authentification envoyée à tous les onglets');
+            
+        } catch (error) {
+            console.log('Erreur lors de la notification des onglets:', error);
         }
     }
 }
