@@ -279,3 +279,84 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+/* Classes pour le contenu markdown */
+.markdown-code {
+    background: #333;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.markdown-li {
+    margin-left: 1rem;
+}
+
+.markdown-h1 {
+    color: #f97316;
+    margin: 0.5rem 0;
+    font-size: 1.25rem;
+}
+
+.markdown-h2 {
+    color: #f97316;
+    margin: 0.5rem 0;
+    font-size: 1.125rem;
+}
+
+.markdown-h3 {
+    color: #f97316;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+}
+
+.link-btn {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    margin: 0.25rem 0.25rem 0.25rem 0;
+    font-size: 0.875rem;
+    display: inline-block;
+    transition: background 0.2s;
+}
+
+.link-btn:hover {
+    background: #ea580c;
+}
+
+.url-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    margin: 0.25rem 0.25rem 0.25rem 0;
+    font-size: 0.875rem;
+    display: inline-block;
+    transition: background 0.2s;
+}
+
+.url-btn:hover {
+    background: #1d4ed8;
+}
+
+/* Classes utilitaires */
+.hidden {
+    display: none;
+}
+
+.flex {
+    display: flex;
+}
+
+.block {
+    display: block;
+}
+
+.inline {
+    display: inline;
+}

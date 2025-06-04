@@ -367,3 +367,84 @@
         transform: none !important;
     }
 }
+
+/* Styles pour le contenu markdown */
+.robert-markdown-code {
+    background: #333 !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    font-family: monospace !important;
+}
+
+.robert-markdown-li {
+    margin-left: 1rem !important;
+}
+
+.robert-markdown-h1 {
+    color: #f97316 !important;
+    margin: 0.5rem 0 !important;
+    font-size: 1.25rem !important;
+}
+
+.robert-markdown-h2 {
+    color: #f97316 !important;
+    margin: 0.5rem 0 !important;
+    font-size: 1.125rem !important;
+}
+
+.robert-markdown-h3 {
+    color: #f97316 !important;
+    margin: 0.5rem 0 !important;
+    font-size: 1rem !important;
+}
+
+.robert-link-btn {
+    background: #f97316 !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.5rem !important;
+    cursor: pointer !important;
+    margin: 0.25rem 0.25rem 0.25rem 0 !important;
+    font-size: 0.875rem !important;
+    display: inline-block !important;
+    transition: background 0.2s !important;
+}
+
+.robert-link-btn:hover {
+    background: #ea580c !important;
+}
+
+.robert-url-btn {
+    background: #2563eb !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.5rem !important;
+    cursor: pointer !important;
+    margin: 0.25rem 0.25rem 0.25rem 0 !important;
+    font-size: 0.875rem !important;
+    display: inline-block !important;
+    transition: background 0.2s !important;
+}
+
+.robert-url-btn:hover {
+    background: #1d4ed8 !important;
+}
+
+/* Classes utilitaires */
+.hidden {
+    display: none !important;
+}
+
+.flex {
+    display: flex !important;
+}
+
+.block {
+    display: block !important;
+}
+
+.inline {
+    display: inline !important;
+}
