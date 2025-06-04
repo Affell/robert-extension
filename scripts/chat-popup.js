@@ -1,20 +1,16 @@
-// Définir la classe ChatPopup globalement
+// Extension Robert IA - Chat Popup Class
 window.ChatPopup = class ChatPopup {
-    constructor(predefinedQuestions) {
+    constructor(predefinedQuestions = []) {
         this.popup = null;
-        this.predefinedQuestions = predefinedQuestions || [];
-    }
-
-    async create() {
+        this.predefinedQuestions = predefinedQuestions;
+    }    async create() {
         if (this.popup) {
             this.popup.remove();
         }
 
-        // Créer le container principal
         this.popup = document.createElement('div');
         this.popup.className = 'robert-chat-popup';
 
-        // Charger le template HTML
         const templateHTML = await this.loadTemplate('templates/chat-popup.html');
         if (!templateHTML) {
             console.error('Impossible de charger le template chat-popup.html');
@@ -22,40 +18,22 @@ window.ChatPopup = class ChatPopup {
         }
 
         this.popup.innerHTML = templateHTML;
-
-        // Injecter les styles CSS
         await this.loadStyles();
 
-        // Mettre à jour l'URL du logo
         const logoImg = this.popup.querySelector('#chat-popup-logo');
         if (logoImg) {
             logoImg.src = chrome.runtime.getURL('icons/logo_robert.png');
         }
 
-        // Configurer les event listeners
         this.setupEventListeners();
-
-        // Initialiser les questions prédéfinies
         this.initializePredefinedQuestions();
-
-        // Ajouter au DOM
         document.body.appendChild(this.popup);
 
         return this.popup;
-    }
-
-    async loadTemplate(templatePath) {
-        try {
-            const response = await fetch(chrome.runtime.getURL(templatePath));
-            return await response.text();
-        } catch (error) {
-            console.error('Erreur lors du chargement du template:', error);
-            return null;
-        }
-    }
-
-    async loadStyles() {
-        // Vérifier si les styles sont déjà chargés
+    }    async loadTemplate(templatePath) {
+        const response = await fetch(chrome.runtime.getURL(templatePath));
+        return await response.text();
+    }    async loadStyles() {
         if (document.querySelector('link[href*="chat-popup.css"]')) {
             return;
         }
@@ -65,37 +43,23 @@ window.ChatPopup = class ChatPopup {
         styleLink.href = chrome.runtime.getURL('styles/chat-popup.css');
         document.head.appendChild(styleLink);
 
-        // Attendre que les styles se chargent
         return new Promise(resolve => {
             styleLink.onload = resolve;
-            setTimeout(resolve, 300); // Fallback timeout
+            setTimeout(resolve, 300);
         });
-    }
-
-    setupEventListeners() {
-        // Bouton fermer
+    }    setupEventListeners() {
         const closeBtn = this.popup.querySelector('#chat-popup-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.close());
-        }
-
-        // Input et bouton envoyer
         const input = this.popup.querySelector('#chat-popup-input');
         const sendBtn = this.popup.querySelector('#chat-popup-send');
 
-        if (sendBtn) {
-            sendBtn.addEventListener('click', () => this.sendMessage());
-        }
+        if (closeBtn) closeBtn.addEventListener('click', () => this.close());
+        if (sendBtn) sendBtn.addEventListener('click', () => this.sendMessage());
         if (input) {
             input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.sendMessage();
-                }
+                if (e.key === 'Enter') this.sendMessage();
             });
         }
-    }
-
-    initializePredefinedQuestions() {
+    }    initializePredefinedQuestions() {
         const questionsContainer = this.popup.querySelector('#chat-popup-questions');
         if (!questionsContainer) return;
         
@@ -103,26 +67,15 @@ window.ChatPopup = class ChatPopup {
             const btn = document.createElement('button');
             btn.className = 'question-btn';
             btn.textContent = question;
-            btn.addEventListener('click', () => {
-                this.handlePredefinedQuestion(question);
-            });
+            btn.addEventListener('click', () => this.handlePredefinedQuestion(question));
             questionsContainer.appendChild(btn);
         });
-    }
-
-    handlePredefinedQuestion(question) {
-        // Masquer l'écran de bienvenue
+    }    handlePredefinedQuestion(question) {
         const welcome = this.popup.querySelector('#chat-popup-welcome');
-        if (welcome) {
-            welcome.style.display = 'none';
-        }
+        if (welcome) welcome.style.display = 'none';
 
         this.addMessage(question, 'user');
-        
-        // Simuler une réponse
-        setTimeout(() => {
-            this.addMessage("Problème API - Cette fonctionnalité sera disponible prochainement.", 'assistant');
-        }, 1000);
+        this.sendQuestionToAPI(question);
     }
 
     sendMessage() {
@@ -132,31 +85,151 @@ window.ChatPopup = class ChatPopup {
         const message = input.value.trim();
         if (!message) return;
 
-        // Masquer l'écran de bienvenue si c'est le premier message
         const welcome = this.popup.querySelector('#chat-popup-welcome');
         if (welcome && welcome.style.display !== 'none') {
             welcome.style.display = 'none';
         }
-        
+          
         this.addMessage(message, 'user');
         input.value = '';
-        
-        // Simuler une réponse
-        setTimeout(() => {
-            this.addMessage("Problème API - Cette fonctionnalité sera disponible prochainement.", 'assistant');
-        }, 1000);
+        this.sendQuestionToAPI(message);
+    }    async sendQuestionToAPI(question) {
+        try {
+            this.addTypingIndicator();
+            
+            const response = await this.makeAuthenticatedRequest('/chat/query', {
+                method: 'POST',
+                body: JSON.stringify({
+                    context: "extension",
+                    query: question
+                })
+            });
+
+            this.removeTypingIndicator();
+            
+            if (response?.response) {
+                this.addMessage(response.response, 'assistant');
+            } else {
+                this.addMessage("Je n'ai pas pu traiter votre demande. Veuillez réessayer.", 'assistant');
+            }
+            
+        } catch (error) {
+            this.removeTypingIndicator();
+            this.handleApiError(error);
+        }
     }
 
-    addMessage(text, sender) {
+    handleApiError(error) {
+        const errorMessages = {
+            'Utilisateur non connecté': "Veuillez vous connecter pour utiliser le chat.",
+            'Session expirée': "Votre session a expiré. Veuillez vous reconnecter."
+        };
+        
+        const message = errorMessages[error.message] || "Erreur de connexion. Veuillez réessayer plus tard.";
+        this.addMessage(message, 'assistant');
+    }    async makeAuthenticatedRequest(endpoint, options = {}) {
+        const { authToken } = await chrome.storage.local.get(['authToken']);
+
+        if (!authToken) {
+            throw new Error('Utilisateur non connecté');
+        }
+
+        const response = await chrome.runtime.sendMessage({
+            action: 'makeApiRequest',
+            data: { endpoint, options, authToken }
+        });
+
+        if (!response.success) {
+            throw new Error(response.error);
+        }
+
+        return response.data;
+    }
+
+    addTypingIndicator() {
+        const messagesContainer = this.popup.querySelector('#chat-popup-messages');
+        
+        const typingEl = document.createElement('div');
+        typingEl.className = 'chat-message assistant typing-indicator';
+        typingEl.id = 'typing-indicator';
+        typingEl.innerHTML = '⚡ Robert réfléchit...';
+        
+        messagesContainer.appendChild(typingEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }    removeTypingIndicator() {
+        const typingIndicator = this.popup?.querySelector('#typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }    addMessage(text, sender) {
         const messagesContainer = this.popup.querySelector('#chat-popup-messages');
         if (!messagesContainer) return;
         
         const messageElement = document.createElement('div');
         messageElement.className = `chat-message ${sender}`;
-        messageElement.textContent = text;
+        
+        if (sender === 'assistant') {
+            messageElement.innerHTML = this.parseMarkdown(text);
+        } else {
+            messageElement.textContent = text;
+        }
         
         messagesContainer.appendChild(messageElement);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }    parseMarkdown(text) {
+        let html = text.replace(/\n/g, '<br>');
+        
+        // Formatage de texte
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        html = html.replace(/`(.*?)`/g, '<code style="background: #333; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+        
+        // Listes et titres
+        html = html.replace(/^[-*]\s(.+)/gm, '<li style="margin-left: 1rem;">$1</li>');
+        html = html.replace(/^### (.*)/gm, '<h3 style="color: #f97316; margin: 0.5rem 0; font-size: 1rem;">$1</h3>');
+        html = html.replace(/^## (.*)/gm, '<h2 style="color: #f97316; margin: 0.5rem 0; font-size: 1.125rem;">$1</h2>');
+        html = html.replace(/^# (.*)/gm, '<h1 style="color: #f97316; margin: 0.5rem 0; font-size: 1.25rem;">$1</h1>');
+        
+        // Boutons pour liens
+        html = this.convertLinksToButtons(html);
+        
+        return html;
+    }
+
+    convertLinksToButtons(html) {
+        const buttonStyle = (bgColor, hoverColor) => `
+            background: ${bgColor}; 
+            color: white; 
+            border: none; 
+            padding: 0.5rem 1rem; 
+            border-radius: 0.5rem; 
+            cursor: pointer; 
+            margin: 0.25rem 0.25rem 0.25rem 0; 
+            font-size: 0.875rem; 
+            display: inline-block;
+            transition: background 0.2s;
+        `;
+
+        // Liens markdown [texte](url)
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+            return `<button onclick="window.open('${url}', '_blank')" style="${buttonStyle('#f97316')}"
+                onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+                🔗 ${text}
+            </button>`;
+        });
+        
+        // URLs directes
+        html = html.replace(/(https?:\/\/[^\s<>"]+)/gi, (url) => {
+            const displayText = url.length > 30 ? url.substring(0, 30) + '...' : url;
+            return `<button onclick="window.open('${url}', '_blank')" style="${buttonStyle('#2563eb')}"
+                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                🌐 ${displayText}
+            </button>`;
+        });
+        
+        return html;
     }
 
     close() {

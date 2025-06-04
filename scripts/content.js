@@ -1,9 +1,8 @@
-// Éviter la redéclaration si le script est déjà chargé
+// Extension Robert IA - Content Script
 if (typeof window.RobertExtension === 'undefined') {
     
     class RobertExtension {
         constructor() {
-            this.apiBaseUrl = 'http://localhost:5000';
             this.chatPopup = null;
             this.floatingLogo = null;
             this.isInitialized = false;
@@ -23,79 +22,40 @@ if (typeof window.RobertExtension === 'undefined') {
             this.setupStorageListener();
             this.checkAuthAndUPHF();
             this.isInitialized = true;
-        }
-
-        setupStorageListener() {
-            // Écouter les changements dans le storage pour détecter connexion/déconnexion
+        }        setupStorageListener() {
             chrome.storage.onChanged.addListener((changes, areaName) => {
-                if (areaName === 'local') {
-                    const authTokenChanged = changes.authToken;
-                    const isLoggedInChanged = changes.isLoggedIn;
-                    
-                    if (authTokenChanged || isLoggedInChanged) {
-                        console.log('Changement d\'état de connexion détecté:', {
-                            authToken: authTokenChanged,
-                            isLoggedIn: isLoggedInChanged
-                        });
-                        
-                        // Revérifier l'affichage du logo
-                        this.checkAuthAndUPHF();
-                    }
+                if (areaName === 'local' && (changes.authToken || changes.isLoggedIn)) {
+                    this.checkAuthAndUPHF();
                 }
             });
-        }
-
-        async checkAuthAndUPHF() {
-            // Vérifier d'abord si l'utilisateur est connecté
+        }        async checkAuthAndUPHF() {
             try {
-                const result = await chrome.storage.local.get(['authToken', 'isLoggedIn']);
-                console.log('Vérification auth pour logo flottant:', {
-                    hasToken: !!result.authToken,
-                    isLoggedIn: result.isLoggedIn
-                });
+                const { authToken, isLoggedIn } = await chrome.storage.local.get(['authToken', 'isLoggedIn']);
                 
-                if (!result.authToken || !result.isLoggedIn) {
-                    // Pas connecté, masquer/supprimer le logo
-                    console.log('Utilisateur non connecté, suppression du logo');
+                if (!authToken || !isLoggedIn) {
                     this.removeFloatingLogo();
                     return;
+                }
+
+                const isUPHFSite = window.location.hostname.endsWith('.uphf.fr') || 
+                                  window.location.hostname === 'uphf.fr';
+                
+                if (isUPHFSite) {
+                    await this.createFloatingLogo();
+                } else {
+                    this.removeFloatingLogo();
                 }
             } catch (error) {
                 console.error('Erreur vérification auth:', error);
                 this.removeFloatingLogo();
-                return;
             }
-            
-            // Si connecté, vérifier si on est sur un site UPHF
-            const hostname = window.location.hostname;
-            const isUPHFSite = hostname.endsWith('.uphf.fr') || hostname === 'uphf.fr';
-            
-            console.log('Vérification site UPHF:', {
-                hostname: hostname,
-                isUPHFSite: isUPHFSite
-            });
-            
-            if (isUPHFSite) {
-                console.log('Site UPHF détecté et utilisateur connecté, création du logo flottant');
-                await this.createFloatingLogo();
-            } else {
-                console.log('Pas un site UPHF, suppression du logo');
-                this.removeFloatingLogo();
-            }
-        }
-
-        removeFloatingLogo() {
-            if (this.floatingLogo && this.floatingLogo.parentNode) {
-                console.log('Suppression du logo flottant');
+        }        removeFloatingLogo() {
+            if (this.floatingLogo?.parentNode) {
                 this.floatingLogo.remove();
                 this.floatingLogo = null;
             }
-        }
-
-        async createFloatingLogo() {
-            // Si le logo existe déjà, ne pas le recréer
+        }        async createFloatingLogo() {
             if (this.floatingLogo && document.body.contains(this.floatingLogo)) {
-                console.log('Logo flottant déjà présent');
                 return;
             }
 
@@ -106,7 +66,6 @@ if (typeof window.RobertExtension === 'undefined') {
                 this.floatingLogo.className = 'robert-floating-logo';
                 this.floatingLogo.innerHTML = logoHtml;
 
-                // Définir l'URL de l'image après insertion
                 const logoImg = this.floatingLogo.querySelector('#robert-logo-img');
                 if (logoImg) {
                     logoImg.src = chrome.runtime.getURL('icons/logo_robert.png');
@@ -114,34 +73,24 @@ if (typeof window.RobertExtension === 'undefined') {
 
                 this.floatingLogo.addEventListener('click', () => this.openChatWidget());
                 document.body.appendChild(this.floatingLogo);
-                console.log('Logo flottant créé et ajouté au DOM');
             } catch (error) {
-                console.error('Erreur lors de la création du logo flottant:', error);
+                console.error('Erreur création logo flottant:', error);
             }
-        }
-
-        setupMessageListener() {
+        }        setupMessageListener() {
             chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                const actions = {
+                    "openChat": () => this.openChatWidget(),
+                    "showVerificationResult": () => {},
+                    "showSummary": () => {},
+                    "showEmailResult": () => {}
+                };
+
                 try {
-                    switch (request.action) {
-                        case "openChat":
-                            this.openChatWidget();
-                            sendResponse({ success: true });
-                            break;
-                        case "showVerificationResult":
-                            // Plus de notifications - les erreurs sont gérées dans la popup
-                            sendResponse({ success: true });
-                            break;
-                        case "showSummary":
-                            // Plus de notifications - les erreurs sont gérées dans la popup
-                            sendResponse({ success: true });
-                            break;
-                        case "showEmailResult":
-                            // Plus de notifications - les erreurs sont gérées dans la popup
-                            sendResponse({ success: true });
-                            break;
-                        default:
-                            sendResponse({ success: false, error: "Action non reconnue" });
+                    if (actions[request.action]) {
+                        actions[request.action]();
+                        sendResponse({ success: true });
+                    } else {
+                        sendResponse({ success: false, error: "Action non reconnue" });
                     }
                 } catch (error) {
                     sendResponse({ success: false, error: error.message });
@@ -149,16 +98,11 @@ if (typeof window.RobertExtension === 'undefined') {
                 
                 return true;
             });
-        }
-
-        openChatWidget() {
-            console.log("Ouverture du chat");
-            
+        }        openChatWidget() {
             if (this.chatPopup) {
                 this.closeChatWidget();
                 return;
             }
-            
             this.createChatPopup();
         }
 
@@ -197,67 +141,37 @@ if (typeof window.RobertExtension === 'undefined') {
             } catch (error) {
                 console.error('Erreur lors de la création du chat:', error);
             }
-        }
-
-        async loadTemplate(templateName) {
-            try {
-                const templateUrl = chrome.runtime.getURL(`templates/${templateName}`);
-                const response = await fetch(templateUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Erreur de chargement du template: ${response.status}`);
-                }
-                
-                return await response.text();
-            } catch (error) {
-                console.error(`Erreur lors du chargement du template ${templateName}:`, error);
-                throw error;
+        }        async loadTemplate(templateName) {
+            const templateUrl = chrome.runtime.getURL(`templates/${templateName}`);
+            const response = await fetch(templateUrl);
+            
+            if (!response.ok) {
+                throw new Error(`Erreur de chargement du template: ${response.status}`);
             }
-        }
-
-        async makeAuthenticatedRequest(endpoint, options = {}) {
-            try {
-                const result = await chrome.storage.local.get(['authToken']);
-                const token = result.authToken;
-
-                if (!token) {
-                    throw new Error('Utilisateur non connecté');
-                }
-
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Robert-Connect-Token': token,
-                    ...options.headers
-                };
-
-                const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
-                    ...options,
-                    headers
-                });
-
-                if (response.status === 401) {
-                    throw new Error('Session expirée');
-                }
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || `Erreur HTTP ${response.status}`);
-                }
-
-                return data;
-            } catch (error) {
-                throw error;
+            
+            return await response.text();
+        }        async makeAuthenticatedRequest(endpoint, options = {}) {
+            const { authToken } = await chrome.storage.local.get(['authToken']);
+            
+            if (!authToken) {
+                throw new Error('Utilisateur non connecté');
             }
-        }
 
-        handleQuestion(question) {
+            const response = await chrome.runtime.sendMessage({
+                action: 'makeApiRequest',
+                data: { endpoint, options, authToken }
+            });
+
+            if (!response.success) {
+                throw new Error(response.error);
+            }
+
+            return response.data;
+        }        handleQuestion(question) {
             const welcome = this.chatPopup.querySelector('#robert-chat-welcome');
             if (welcome) welcome.style.display = 'none';
 
             this.addMessage(question, 'user');
-            
-            // Envoyer la question à l'API au lieu de simuler
             this.sendQuestionToAPI(question);
         }
 
@@ -273,45 +187,41 @@ if (typeof window.RobertExtension === 'undefined') {
             
             this.addMessage(message, 'user');
             input.value = '';
-            
-            // Envoyer le message à l'API
             this.sendQuestionToAPI(message);
-        }
-
-        async sendQuestionToAPI(question) {
+        }        async sendQuestionToAPI(question) {
             try {
                 this.addTypingIndicator();
                 
-                const response = await this.makeAuthenticatedRequest('/chat/message', {
+                const response = await this.makeAuthenticatedRequest('/chat/query', {
                     method: 'POST',
                     body: JSON.stringify({
-                        message: question,
-                        context: {
-                            url: window.location.href,
-                            title: document.title
-                        }
+                        context: "extension",
+                        query: question
                     })
                 });
 
                 this.removeTypingIndicator();
                 
-                if (response.success && response.message) {
-                    this.addMessage(response.message, 'assistant');
+                if (response?.response) {
+                    this.addMessage(response.response, 'assistant');
                 } else {
                     this.addMessage("Je n'ai pas pu traiter votre demande. Veuillez réessayer.", 'assistant');
                 }
                 
             } catch (error) {
                 this.removeTypingIndicator();
-                
-                if (error.message === 'Utilisateur non connecté') {
-                    this.addMessage("Veuillez vous connecter pour utiliser le chat.", 'assistant');
-                } else if (error.message === 'Session expirée') {
-                    this.addMessage("Votre session a expiré. Veuillez vous reconnecter.", 'assistant');
-                } else {
-                    this.addMessage("Erreur de connexion. Veuillez réessayer plus tard.", 'assistant');
-                }
+                this.handleApiError(error);
             }
+        }
+
+        handleApiError(error) {
+            const errorMessages = {
+                'Utilisateur non connecté': "Veuillez vous connecter pour utiliser le chat.",
+                'Session expirée': "Votre session a expiré. Veuillez vous reconnecter."
+            };
+            
+            const message = errorMessages[error.message] || "Erreur de connexion. Veuillez réessayer plus tard.";
+            this.addMessage(message, 'assistant');
         }
 
         addTypingIndicator() {
@@ -331,24 +241,88 @@ if (typeof window.RobertExtension === 'undefined') {
             if (typingIndicator) {
                 typingIndicator.remove();
             }
-        }
-
-        addMessage(text, sender) {
+        }        addMessage(text, sender) {
             const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
             
             const messageEl = document.createElement('div');
             messageEl.className = `robert-message robert-message-${sender}`;
-            messageEl.textContent = text;
+            
+            if (sender === 'assistant') {
+                // Parser le markdown pour les réponses de l'assistant
+                messageEl.innerHTML = this.parseMarkdown(text);
+            } else {
+                messageEl.textContent = text;
+            }
             
             messagesContainer.appendChild(messageEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        closeChatWidget() {
+        parseMarkdown(text) {
+            // Convertir les sauts de ligne
+            let html = text.replace(/\n/g, '<br>');
+            
+            // Gras (**texte** ou __texte__)
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            
+            // Italique (*texte* ou _texte_)
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+            
+            // Code inline (`code`)
+            html = html.replace(/`(.*?)`/g, '<code style="background: #333; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>');
+            
+            // Listes non ordonnées (- item ou * item)
+            html = html.replace(/^[-*]\s(.+)/gm, '<li style="margin-left: 1rem;">$1</li>');
+            
+            // Titres (# Titre)
+            html = html.replace(/^### (.*)/gm, '<h3 style="color: #f97316; margin: 0.5rem 0; font-size: 1rem;">$1</h3>');
+            html = html.replace(/^## (.*)/gm, '<h2 style="color: #f97316; margin: 0.5rem 0; font-size: 1.125rem;">$1</h2>');
+            html = html.replace(/^# (.*)/gm, '<h1 style="color: #f97316; margin: 0.5rem 0; font-size: 1.25rem;">$1</h1>');
+            
+            // Liens [texte](url) - convertis en boutons
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+                return `<button onclick="window.open('${url}', '_blank')" style="
+                    background: #f97316; 
+                    color: white; 
+                    border: none; 
+                    padding: 0.5rem 1rem; 
+                    border-radius: 0.5rem; 
+                    cursor: pointer; 
+                    margin: 0.25rem 0.25rem 0.25rem 0; 
+                    font-size: 0.875rem; 
+                    display: inline-block;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+                    🔗 ${text}
+                </button>`;
+            });
+            
+            // URLs simples (http/https) - convertis en boutons
+            html = html.replace(/(https?:\/\/[^\s<>"]+)/gi, (url) => {
+                const displayText = url.length > 30 ? url.substring(0, 30) + '...' : url;
+                return `<button onclick="window.open('${url}', '_blank')" style="
+                    background: #2563eb; 
+                    color: white; 
+                    border: none; 
+                    padding: 0.5rem 1rem; 
+                    border-radius: 0.5rem; 
+                    cursor: pointer; 
+                    margin: 0.25rem 0.25rem 0.25rem 0; 
+                    font-size: 0.875rem; 
+                    display: inline-block;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                    🌐 ${displayText}
+                </button>`;
+            });
+            
+            return html;
+        }        closeChatWidget() {
             if (this.chatPopup) {
                 this.chatPopup.remove();
                 this.chatPopup = null;
-                console.log('Chat fermé');
             }
         }
     }
