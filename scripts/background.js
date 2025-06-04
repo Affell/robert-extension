@@ -41,11 +41,63 @@ async function reloadAllContentScripts() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Message reçu dans background:', request);
     
-    // Répondre immédiatement pour éviter les timeouts
-    sendResponse({ received: true });
+    // Gérer les requêtes API
+    if (request.action === 'makeApiRequest') {
+        handleApiRequest(request.data)
+            .then(response => sendResponse({ success: true, data: response }))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+        return true; // Indique une réponse asynchrone
+    }
     
+    // Répondre immédiatement pour les autres messages
+    sendResponse({ received: true });
     return true;
 });
+
+// Fonction pour gérer les requêtes API via le service worker
+async function handleApiRequest(requestData) {
+    const { endpoint, options, authToken } = requestData;
+    const apiBaseUrl = 'http://localhost:5000';
+    
+    console.log('Requête API via background:', endpoint);
+    
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Robert-Connect-Token': authToken,
+            ...options.headers
+        };
+
+        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+            ...options,
+            headers
+        });
+
+        if (response.status === 401) {
+            throw new Error('Session expirée');
+        }
+
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            throw new Error('Réponse inattendue du serveur');
+        }
+        
+        if (!response.ok) {
+            throw new Error(data.message || data.error || `Erreur HTTP ${response.status}`);
+        }
+
+        return data;
+    } catch (error) {
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Connexion impossible à l\'API. Vérifiez que Docker est démarré.');
+        }
+        throw error;
+    }
+}
 
 // Gérer les erreurs de startup
 chrome.runtime.onStartup.addListener(() => {

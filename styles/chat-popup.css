@@ -220,3 +220,62 @@
 .send-btn:hover {
     background: #ea580c;
 }
+
+/* Indicateur de frappe */
+.typing-indicator {
+    background: #2a2a2a;
+    color: #a1a1aa;
+    animation: pulse 1.5s ease-in-out infinite;
+    font-style: italic;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Support pour le markdown dans les messages */
+.chat-message.assistant h1,
+.chat-message.assistant h2,
+.chat-message.assistant h3 {
+    margin: 0.5rem 0;
+    color: #f97316;
+}
+
+.chat-message.assistant strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.chat-message.assistant em {
+    color: #e5e5e5;
+    font-style: italic;
+}
+
+.chat-message.assistant code {
+    background: #333;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+}
+
+.chat-message.assistant li {
+    margin-left: 1rem;
+    list-style-type: disc;
+    color: #ffffff;
+}
+
+.chat-message.assistant button {
+    margin: 0.25rem 0.25rem 0.25rem 0;
+    font-family: inherit;
+    font-size: 0.875rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+.chat-message.assistant button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}

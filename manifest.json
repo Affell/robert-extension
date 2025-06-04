@@ -38,14 +38,16 @@
       },
       "description": "Ouvrir la popup Robert IA"
     }
-  },
-  "web_accessible_resources": [
+  },  "web_accessible_resources": [
     {
       "resources": [
         "icons/logo_robert.png",
         "styles/popup.css",
+        "styles/chat-popup.css",
         "scripts/content.js",
+        "scripts/chat-popup.js",
         "templates/chat-widget.html",
+        "templates/chat-popup.html",
         "templates/floating-logo.html"
       ],
       "matches": ["<all_urls>"]
