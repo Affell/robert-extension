@@ -365,22 +365,55 @@ class RobertPopup {    constructor() {
             
             const htmlContent = results[0].result;
             
-            const verificationResult = await this.callVerificationAPI({
+            // Préparer le contenu de la page pour l'analyse - limité à 8000 chars pour laisser de la place au prompt
+            const pageContent = `
+Titre: ${tab.title}
+
+Contenu HTML:
+${htmlContent.substring(0, 8000)}
+            `.trim();
+            
+            // Vérifier que le contenu total ne dépasse pas 10000 caractères
+            const prompt = `Analyse cette page web et donne-moi un score de confiance de 0 à 100 ainsi qu'une évaluation de sa fiabilité:
+
+`;
+            const maxContentLength = 10000 - prompt.length - tab.title.length - 20; // 20 pour les labels
+            
+            const finalContent = pageContent.length > maxContentLength 
+                ? pageContent.substring(0, maxContentLength) 
+                : pageContent;
+            
+            // Préparer les données à envoyer avec URL séparée
+            const dataToSend = {
                 url: tab.url,
-                title: tab.title,
-                html: htmlContent.substring(0, 5000)
-            });
+                body: prompt + finalContent
+            };
+            
+            const verificationResult = await this.callPageAnalysisAPI(dataToSend);
             
             if (verificationResult.error) {
                 this.setStatus(verificationResult.error, "error");
+                this.hideAnalysisResult();
+            } else if (verificationResult.response) {
+                // Essayer d'extraire un score de la réponse
+                const scoreMatch = verificationResult.response.match(/(\d+)\/100|score[:\s]*(\d+)|(\d+)\s*%/i);
+                let score = null;
+                
+                if (scoreMatch) {
+                    score = scoreMatch[1] || scoreMatch[2] || scoreMatch[3];
+                }
+                
+                // Afficher la réponse complète dans l'interface
+                this.showAnalysisResult(verificationResult.response, score, tab.url);
+                this.setStatus("Analyse terminée", "success");
             } else {
-                this.setStatus(`Score: ${verificationResult.score}/100`, "success");
+                this.setStatus("Réponse vide de l'API", "error");
+                this.hideAnalysisResult();
             }
             
-            setTimeout(() => this.updateStatus(), 3000);
         } catch (error) {
             this.setStatus("Erreur de vérification", "error");
-            console.error("Erreur:", error);
+            this.hideAnalysisResult();
         }
     }
 
@@ -392,126 +425,314 @@ class RobertPopup {    constructor() {
             
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                function: () => document.body.innerText
+                function: () => document.documentElement.outerHTML
             });
             
-            const textContent = results[0].result;
+            const htmlContent = results[0].result;
             
-            const summary = await this.callSummaryAPI({
+            // Préparer le contenu de la page pour le résumé - limité pour ne pas dépasser 10000 chars
+            const prompt = `Résume cette page web de manière concise et structurée:
+
+`;
+            const maxContentLength = 10000 - prompt.length - tab.title.length - 20; // 20 pour les labels
+            
+            const pageContent = `
+Titre: ${tab.title}
+
+Contenu HTML:
+${htmlContent.substring(0, Math.min(htmlContent.length, maxContentLength - 100))}
+            `.trim();
+            
+            // Préparer les données à envoyer
+            const dataToSend = {
                 url: tab.url,
-                title: tab.title,
-                content: textContent.substring(0, 10000)
-            });
+                body: prompt + pageContent
+            };
             
-            if (summary.error) {
-                this.setStatus(summary.error, "error");
-            } else {
+            const summaryResult = await this.callPageResumeAPI(dataToSend);
+            
+            if (summaryResult.error) {
+                this.setStatus(summaryResult.error, "error");
+                this.hideAnalysisResult();
+            } else if (summaryResult.response) {
+                // Afficher le résumé dans l'interface
+                this.showSummaryResult(summaryResult.response, tab.url);
                 this.setStatus("Résumé créé", "success");
-                console.log("Résumé:", summary.summary);
+            } else {
+                this.setStatus("Réponse vide de l'API", "error");
+                this.hideAnalysisResult();
             }
             
-            setTimeout(() => this.updateStatus(), 3000);
         } catch (error) {
             this.setStatus("Erreur de résumé", "error");
-            console.error("Erreur:", error);
+            this.hideAnalysisResult();
         }
     }
 
-    async checkEmail() {
-        this.setStatus("Vérification email...", "loading");
+    showAnalysisResult(response, score, url) {
+        // Créer ou mettre à jour la section des résultats
+        let resultSection = document.getElementById('analysis-result');
+        if (!resultSection) {
+            resultSection = document.createElement('div');
+            resultSection.id = 'analysis-result';
+            resultSection.className = 'analysis-result';
+            
+            // Insérer après la section principale ou avant la section compte
+            const mainContent = this.mainContent;
+            if (mainContent) {
+                mainContent.appendChild(resultSection);
+                // Ajouter la classe pour ajuster l'espacement
+                mainContent.classList.add('with-analysis');
+            }
+        }
         
+        // Agrandir la popup de manière contrôlée
+        this.expandPopupSafely();
+        
+        // Extraire le domaine de l'URL
+        let domain = 'Page analysée';
         try {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            domain = new URL(url).hostname;
+        } catch (e) {
+            console.log('Impossible d\'extraire le domaine:', e);
+        }
+        
+        // Déterminer la couleur du score
+        let scoreColor = '#ef4444'; // rouge par défaut
+        let scoreStatus = 'Risqué';
+        
+        if (score) {
+            const numScore = parseInt(score);
+            if (numScore >= 80) {
+                scoreColor = '#22c55e'; // vert
+                scoreStatus = 'Fiable';
+            } else if (numScore >= 60) {
+                scoreColor = '#f59e0b'; // orange
+                scoreStatus = 'Modéré';
+            }
+        }
+        
+        resultSection.innerHTML = `
+            <div class="analysis-header">
+                <div class="analysis-domain">
+                    <h3>🔍 Analyse de sécurité</h3>
+                    <p class="domain-name">${domain}</p>
+                </div>
+                <button class="close-analysis-btn" id="close-analysis">×</button>
+            </div>
             
-            const results = await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                function: () => {
-                    const emailProviders = [
-                        { name: 'Gmail', selectors: ['.ii.gt', '[role="main"] [data-message-id]'] },
-                        { name: 'Outlook', selectors: ['[role="main"] .allowTextSelection', '.rps_1454'] },
-                        { name: 'Yahoo', selectors: ['.msg-body', '[data-test-id="message-view-body"]'] },
-                        { 
-                            name: 'Zimbra', 
-                            selectors: [
-                                '.MsgBody',
-                                '.ZmMsgBody', 
-                                '[id*="zv__MSG"]',
-                                '.MsgBody-html',
-                                '[class*="MsgBodyContainer"]',
-                                '.ZmMailMsgView .MsgBody',
-                                '[id^="zv__MSG"][id$="__MSG_body"]'
-                            ] 
-                        }
-                    ];
-                    
-                    for (const provider of emailProviders) {
-                        for (const selector of provider.selectors) {
-                            const emailElement = document.querySelector(selector);
-                            if (emailElement) {
-                                let subject = 'Sujet non trouvé';
-                                
-                                if (provider.name === 'Zimbra') {
-                                    const subjectSelectors = [
-                                        '.SubjectCol',
-                                        '[id*="zv__MSG"][id*="subject"]',
-                                        '.ZmMailMsgView .SubjectCol',
-                                        '[class*="MsgHeaderTable"] .SubjectCol',
-                                        '.MsgHeaderSubject'
-                                    ];
-                                    
-                                    for (const subjSelector of subjectSelectors) {
-                                        const subjElement = document.querySelector(subjSelector);
-                                        if (subjElement) {
-                                            subject = subjElement.textContent || subjElement.innerText || subject;
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    const subjElement = document.querySelector('h2, [data-testid="message-subject"], .hP, .SubjectCol');
-                                    if (subjElement) {
-                                        subject = subjElement.textContent || subjElement.innerText || subject;
-                                    }
-                                }
-                                
-                                return {
-                                    isEmail: true,
-                                    provider: provider.name,
-                                    subject: subject.trim(),
-                                    content: emailElement.innerText.substring(0, 5000)
-                                };
-                            }
-                        }
-                    }
-                    
-                    return { isEmail: false };
-                }
+            ${score ? `
+            <div class="score-section">
+                <div class="score-circle" style="border-color: ${scoreColor};">
+                    <span class="score-number" style="color: ${scoreColor};">${score}</span>
+                    <span class="score-total">/100</span>
+                </div>
+                <div class="score-status" style="color: ${scoreColor};">
+                    ${scoreStatus}
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="analysis-content">
+                <h4>📋 Rapport d'analyse</h4>
+                <div class="analysis-text">${this.formatAnalysisText(response)}</div>
+            </div>
+            
+            <div class="analysis-actions">
+                <button class="action-btn secondary" id="copy-analysis">
+                    📋 Copier le rapport
+                </button>
+                <button class="action-btn primary" id="new-analysis">
+                    🔄 Nouvelle analyse
+                </button>
+            </div>
+        `;
+        
+        resultSection.classList.remove('hidden');
+        resultSection.classList.add('visible');
+        
+        // Attacher les event listeners
+        const closeBtn = document.getElementById('close-analysis');
+        const copyBtn = document.getElementById('copy-analysis');
+        const newAnalysisBtn = document.getElementById('new-analysis');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideAnalysisResult());
+        }
+        
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(response).then(() => {
+                    copyBtn.textContent = '✅ Copié !';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '📋 Copier le rapport';
+                    }, 2000);
+                });
             });
+        }
+        
+        if (newAnalysisBtn) {
+            newAnalysisBtn.addEventListener('click', () => {
+                this.hideAnalysisResult();
+                this.verifyPage();
+            });
+        }
+    }
+    
+    showSummaryResult(response, url) {
+        // Créer ou mettre à jour la section des résultats
+        let resultSection = document.getElementById('analysis-result');
+        if (!resultSection) {
+            resultSection = document.createElement('div');
+            resultSection.id = 'analysis-result';
+            resultSection.className = 'analysis-result';
             
-            const emailData = results[0].result;
+            // Insérer après la section principale
+            const mainContent = this.mainContent;
+            if (mainContent) {
+                mainContent.appendChild(resultSection);
+                // Ajouter la classe pour ajuster l'espacement
+                mainContent.classList.add('with-analysis');
+            }
+        }
+        
+        // Agrandir la popup de manière contrôlée
+        this.expandPopupSafely();
+        
+        // Extraire le domaine de l'URL
+        let domain = 'Page résumée';
+        try {
+            domain = new URL(url).hostname;
+        } catch (e) {
+            // Fallback silencieux
+        }
+        
+        resultSection.innerHTML = `
+            <div class="analysis-header">
+                <div class="analysis-domain">
+                    <h3>📄 Résumé de page</h3>
+                    <p class="domain-name">${domain}</p>
+                </div>
+                <button class="close-analysis-btn" id="close-analysis">×</button>
+            </div>
             
-            let result;
-            if (!emailData.isEmail) {
-                result = {
-                    isEmail: false,
-                    message: "Vous ne semblez pas être sur un email"
-                };
-                this.setStatus(result.message, "warning");
-            } else {
-                result = await this.callPhishingAPI(emailData);
-                if (result.error) {
-                    this.setStatus(result.error, "error");
-                } else {
-                    const statusType = result.isDangerous ? "error" : "success";
-                    const statusMessage = result.isDangerous ? "Email suspect détecté" : "Email sécurisé";
-                    this.setStatus(statusMessage, statusType);
-                }
+            <div class="analysis-content">
+                <h4>📋 Résumé du contenu</h4>
+                <div class="analysis-text">${this.formatAnalysisText(response)}</div>
+            </div>
+            
+            <div class="analysis-actions">
+                <button class="action-btn secondary" id="copy-analysis">
+                    📋 Copier le résumé
+                </button>
+                <button class="action-btn primary" id="new-summary">
+                    🔄 Nouveau résumé
+                </button>
+            </div>
+        `;
+        
+        resultSection.classList.remove('hidden');
+        resultSection.classList.add('visible');
+        
+        // Attacher les event listeners
+        const closeBtn = document.getElementById('close-analysis');
+        const copyBtn = document.getElementById('copy-analysis');
+        const newSummaryBtn = document.getElementById('new-summary');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideAnalysisResult());
+        }
+        
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(response).then(() => {
+                    copyBtn.textContent = '✅ Copié !';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '📋 Copier le résumé';
+                    }, 2000);
+                });
+            });
+        }
+        
+        if (newSummaryBtn) {
+            newSummaryBtn.addEventListener('click', () => {
+                this.hideAnalysisResult();
+                this.summarizePage();
+            });
+        }
+    }
+    
+    hideAnalysisResult() {
+        const resultSection = document.getElementById('analysis-result');
+        if (resultSection) {
+            resultSection.classList.add('hidden');
+            resultSection.classList.remove('visible');
+        }
+        
+        // Retirer la classe d'analyse du contenu
+        if (this.mainContent) {
+            this.mainContent.classList.remove('with-analysis');
+        }
+        
+        // Réduire la popup de manière contrôlée
+        this.contractPopupSafely();
+    }
+    
+    // Méthode simplifiée pour agrandir la popup
+    expandPopupSafely() {
+        console.log('Expansion de la popup pour l\'analyse');
+        
+        const body = document.body;
+        const container = document.querySelector('.popup-container');
+        
+        // Application directe des styles d'expansion
+        body.classList.add('expanded-popup');
+        
+        if (container) {
+            container.classList.add('analyzing');
+        }
+        
+        console.log('Popup étendue à 700px de hauteur fixe');
+    }
+    
+    // Méthode simplifiée pour réduire la popup
+    contractPopupSafely() {
+        console.log('Réduction de la popup à la taille standard');
+        
+        const body = document.body;
+        const container = document.querySelector('.popup-container');
+        
+        // Retour à la taille standard avec transition
+        setTimeout(() => {
+            body.classList.remove('expanded-popup');
+            
+            if (container) {
+                container.classList.remove('analyzing');
             }
             
-            setTimeout(() => this.updateStatus(), 3000);
-        } catch (error) {
-            this.setStatus("Erreur vérification email", "error");
-            console.error("Erreur:", error);
-        }
+            console.log('Popup réduite à 600px de hauteur fixe');
+        }, 100);
+    }
+
+    formatAnalysisText(text) {
+        // Convertir le texte brut en HTML formaté avec optimisation pour espace restreint
+        let formatted = text
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>')
+            .replace(/^/, '<p>')
+            .replace(/$/, '</p>')
+            .replace(/- (.+?)(<br>|<\/p>)/g, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>');
+        
+        // Optimiser l'affichage pour l'espace restreint
+        formatted = formatted
+            .replace(/<p><\/p>/g, '') // Supprimer les paragraphes vides
+            .replace(/<br><br>/g, '<br>') // Réduire les doubles sauts de ligne
+            .replace(/(<p>.*?<\/p>)\s*(<p>.*?<\/p>)/g, '$1$2'); // Réduire l'espacement entre paragraphes
+        
+        return formatted;
     }
 
     async testAPIConnection() {
@@ -578,8 +799,16 @@ class RobertPopup {    constructor() {
             ...options.headers
         };
 
-        console.log(`Requête authentifiée vers: ${this.apiBaseUrl}${endpoint}`);
+        console.log(`=== REQUÊTE AUTHENTIFIÉE VERS ${endpoint} ===`);
+        console.log(`URL complète: ${this.apiBaseUrl}${endpoint}`);
+        console.log(`Méthode: ${options.method || 'GET'}`);
+        console.log('Headers envoyés:', headers);
         console.log('Token utilisé:', token ? `${token.substring(0, 10)}...` : 'aucun');
+        
+        if (options.body) {
+            console.log('Body (taille):', options.body.length, 'caractères');
+            console.log('Body (aperçu):', options.body.substring(0, 500));
+        }
 
         try {
             const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
@@ -587,33 +816,62 @@ class RobertPopup {    constructor() {
                 headers
             });
 
-            console.log(`Réponse de ${endpoint}:`, response.status, response.statusText);
+            console.log(`=== RÉPONSE HTTP ${endpoint} ===`);
+            console.log('Status:', response.status, response.statusText);
+            console.log('Headers de réponse:');
+            response.headers.forEach((value, key) => {
+                console.log(`  ${key}: ${value}`);
+            });
 
             if (response.status === 401) {
-                console.log('Token expiré ou invalide - nettoyage des données d\'auth');
+                console.log('❌ TOKEN EXPIRÉ OU INVALIDE - nettoyage des données d\'auth');
                 await this.clearAuthData();
                 throw new Error('Session expirée');
             }
 
             const contentType = response.headers.get('content-type');
+            console.log('Content-Type reçu:', contentType);
+            
             let data;
             
             if (contentType && contentType.includes('application/json')) {
-                data = await response.json();
+                const rawText = await response.text();
+                console.log('=== RÉPONSE BRUTE (TEXT) ===');
+                console.log('Taille:', rawText.length, 'caractères');
+                console.log('Contenu brut:', rawText);
+                
+                try {
+                    data = JSON.parse(rawText);
+                    console.log('=== RÉPONSE PARSÉE (JSON) ===');
+                    console.log('Type:', typeof data);
+                    console.log('Contenu:', data);
+                } catch (parseError) {
+                    console.error('❌ ERREUR DE PARSING JSON:', parseError);
+                    console.log('Texte qui a causé l\'erreur:', rawText);
+                    throw new Error(`Erreur de parsing JSON: ${parseError.message}`);
+                }
             } else {
                 const text = await response.text();
-                console.log(`Réponse non-JSON de ${endpoint}:`, text);
+                console.log(`❌ RÉPONSE NON-JSON de ${endpoint}:`, text);
                 throw new Error(`Réponse inattendue du serveur: ${text}`);
             }
             
-            console.log(`Données de ${endpoint}:`, data);
+            console.log(`=== DONNÉES FINALES ${endpoint} ===`);
+            console.log('Data finale:', JSON.stringify(data, null, 2));
             
             if (!response.ok) {
+                console.error('❌ RÉPONSE HTTP NON-OK:', response.status, data);
                 throw new Error(data.message || data.error || `Erreur HTTP ${response.status}`);
             }
 
+            console.log('✅ SUCCÈS - Retour des données');
             return data;
         } catch (error) {
+            console.error(`=== ERREUR FETCH ${endpoint} ===`);
+            console.error('Type:', error.name);
+            console.error('Message:', error.message);
+            console.error('Stack:', error.stack);
+            
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 throw new Error(`Connexion impossible à l'API (${this.apiBaseUrl}). Vérifiez que Docker est démarré.`);
             }
@@ -1009,10 +1267,51 @@ class RobertPopup {    constructor() {
         }
     }
 
+    // Nouvelle méthode pour appeler l'API /chat/page/analyze
+    async callPageAnalysisAPI(data) {
+        try {
+            const result = await this.makeAPIRequest('/chat/page/analyze', data);
+            return result;
+        } catch (error) {
+            return {
+                error: `API non disponible: ${error.message}`,
+                response: null
+            };
+        }
+    }
+
+    // Nouvelle méthode pour appeler l'API /chat/page/resume
+    async callPageResumeAPI(data) {
+        try {
+            const result = await this.makeAPIRequest('/chat/page/resume', data);
+            return result;
+        } catch (error) {
+            return {
+                error: `API non disponible: ${error.message}`,
+                response: null
+            };
+        }
+    }
+
     // Adapter les API Mock Functions pour le mode test
     async callVerificationAPI(data) {
         try {
-            return await this.makeAPIRequest('/analyze/verify-page', data);
+            // Convertir l'ancien format vers le nouveau avec URL séparée et limitation de taille
+            const prompt = `Analyse cette page web et donne-moi un score de confiance de 0 à 100:
+
+Titre: ${data.title}
+
+Contenu HTML:
+`;
+            const maxHtmlLength = 10000 - prompt.length;
+            const truncatedHtml = data.html.substring(0, maxHtmlLength);
+            
+            const pageAnalysisData = {
+                url: data.url,
+                body: prompt + truncatedHtml
+            };
+            
+            return await this.callPageAnalysisAPI(pageAnalysisData);
         } catch (error) {
             return {
                 isTrustworthy: false,
@@ -1023,30 +1322,29 @@ class RobertPopup {    constructor() {
         }
     }
 
+    // Ancienne méthode de résumé pour compatibilité
     async callSummaryAPI(data) {
         try {
-            return await this.makeAPIRequest('/analyze/summarize-page', data);
-        } catch (error) {
-            return {
-                summary: "Impossible de générer le résumé",
-                keyPoints: [],
-                error: "API non disponible"
-            };
-        }
-    }
+            // Convertir vers le nouveau format avec limitation de taille
+            const prompt = `Résume cette page web:
 
-    async callPhishingAPI(emailData) {
-        try {
-            return await this.makeAPIRequest('/analyze/check-email', emailData);
+Titre: ${data.title}
+
+Contenu:
+`;
+            const maxContentLength = 10000 - prompt.length;
+            const truncatedContent = data.content.substring(0, maxContentLength);
+            
+            const pageResumeData = {
+                url: data.url,
+                body: prompt + truncatedContent
+            };
+            
+            return await this.callPageResumeAPI(pageResumeData);
         } catch (error) {
             return {
-                isEmail: true,
-                provider: emailData.provider,
-                subject: emailData.subject,
-                isDangerous: false,
-                message: "Impossible d'analyser l'email",
-                confidence: 0,
-                error: "API non disponible"
+                error: `API non disponible: ${error.message}`,
+                summary: null
             };
         }
     }
