@@ -66,149 +66,229 @@
     50% { transform: translateY(-10px); }
 }
 
-/* Chat Popup */
+/* Chat Popup - Style moderne et isolation complète */
 .robert-chat-popup {
+    /* Isolation Shadow DOM */
+    all: initial !important;
+    
+    /* Positionnement et dimensions fixes */
     position: fixed !important;
     top: 50% !important;
-    left: 20px !important;
+    right: 20px !important;
     transform: translateY(-50%) !important;
-    width: 400px !important;
+    width: 380px !important;
     height: 600px !important;
+    
+    /* Apparence moderne - THEME SOMBRE */
     background: #1a1a1a !important;
     border: 1px solid #333333 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.8) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+    
+    /* Z-index et visibilité */
     z-index: 2147483647 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    
+    /* Typography reset */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
     color: #ffffff !important;
+    
+    /* Layout */
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
+    
+    /* Animation */
+    animation: slideInFromRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+/* Reset complet pour TOUS les enfants */
+.robert-chat-popup *,
+.robert-chat-popup *::before,
+.robert-chat-popup *::after {
+    all: initial !important;
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+/* Container principal */
 .robert-chat-container {
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
+    width: 100% !important;
 }
 
+/* Header du chat */
 .robert-chat-header {
-    padding: 1rem !important;
-    background: #1a1a1a !important;
-    border-bottom: 1px solid #333333 !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+    padding: 16px 20px !important;
+    background: #1a1a1a !important;
+    border-bottom: 1px solid #333333 !important;
+    border-radius: 20px 20px 0 0 !important;
+    height: 70px !important;
     flex-shrink: 0 !important;
 }
 
 .robert-header-content {
     display: flex !important;
     align-items: center !important;
-    gap: 1rem !important;
+    gap: 12px !important;
+    flex: 1 !important;
 }
 
 .robert-chat-logo {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 0.5rem !important;
+    display: block !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    border: 2px solid #f97316 !important;
     object-fit: cover !important;
 }
 
+.robert-header-text {
+    display: block !important;
+}
+
 .robert-header-text h1 {
-    font-size: 1.5rem !important;
+    display: block !important;
+    font-size: 18px !important;
     font-weight: 600 !important;
     color: #f97316 !important;
     margin: 0 !important;
+    line-height: 1.2 !important;
 }
 
 .robert-header-text p {
+    display: block !important;
     color: #a1a1aa !important;
-    font-size: 0.875rem !important;
-    margin: 0 !important;
+    font-size: 12px !important;
+    margin: 2px 0 0 0 !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
 }
 
 .robert-close-btn {
-    background: none !important;
-    border: none !important;
-    color: #a1a1aa !important;
-    cursor: pointer !important;
-    font-size: 1.5rem !important;
-    padding: 0.5rem !important;
-    border-radius: 0.25rem !important;
-    transition: all 0.2s !important;
-    width: 40px !important;
-    height: 40px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 8px !important;
+    color: #a1a1aa !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    transition: all 0.2s ease !important;
 }
 
 .robert-close-btn:hover {
-    background: #2a2a2a !important;
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
     color: #ffffff !important;
 }
 
+/* Contenu du chat */
 .robert-chat-content {
-    flex: 1 !important;
-    padding: 1rem !important;
-    overflow-y: auto !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 0.75rem !important;
+    flex: 1 !important;
+    padding: 16px !important;
+    gap: 12px !important;
+    background: #1a1a1a !important;
+    overflow-y: auto !important;
+    height: calc(600px - 140px) !important;
 }
 
+.robert-chat-content::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.robert-chat-content::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.robert-chat-content::-webkit-scrollbar-thumb {
+    background: #3a3a3a !important;
+    border-radius: 2px !important;
+}
+
+/* Messages d'accueil */
 .robert-chat-welcome {
-    padding: 1rem !important;
+    display: block !important;
+    padding: 20px !important;
     background: #2a2a2a !important;
-    border-radius: 0.75rem !important;
-    text-align: center !important;
     border: 1px solid #3a3a3a !important;
+    border-radius: 12px !important;
+    text-align: center !important;
 }
 
 .robert-chat-welcome h3 {
-    margin: 0 0 0.5rem 0 !important;
+    display: block !important;
+    margin: 0 0 8px 0 !important;
     color: #f97316 !important;
-    font-size: 1.25rem !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
 }
 
 .robert-chat-welcome p {
-    margin: 0 0 1rem 0 !important;
-    color: #a1a1aa !important;
-    font-size: 1rem !important;
+    display: block !important;
+    margin: 0 0 16px 0 !important;
+    color: #d1d5db !important;
+    font-size: 14px !important;
     line-height: 1.4 !important;
 }
 
+/* Container des questions */
 .robert-questions-container {
     display: flex !important;
     flex-direction: column !important;
-    gap: 0.5rem !important;
+    gap: 8px !important;
 }
 
+/* Boutons de questions */
 .robert-question-btn {
+    display: block !important;
+    width: 100% !important;
+    min-height: 40px !important;
+    padding: 12px 16px !important;
     background: #f97316 !important;
     color: white !important;
     border: none !important;
-    padding: 0.75rem !important;
-    border-radius: 0.5rem !important;
-    cursor: pointer !important;
-    font-size: 0.875rem !important;
-    transition: all 0.2s !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    line-height: 1.3 !important;
     text-align: left !important;
-    font-family: inherit !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
 }
 
 .robert-question-btn:hover {
     background: #ea580c !important;
+    transform: translateY(-1px) !important;
 }
 
+/* Messages */
 .robert-message {
-    padding: 0.75rem !important;
-    border-radius: 0.75rem !important;
-    margin: 0.25rem 0 !important;
-    max-width: 85% !important;
+    display: block !important;
+    max-width: 80% !important;
+    padding: 12px 16px !important;
+    border-radius: 16px !important;
+    margin: 4px 0 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
     word-wrap: break-word !important;
-    font-size: 0.9rem !important;
+    animation: messageSlideIn 0.3s ease-out !important;
 }
 
 .robert-message-user {
@@ -216,155 +296,457 @@
     color: white !important;
     align-self: flex-end !important;
     margin-left: auto !important;
+    border-bottom-right-radius: 4px !important;
 }
 
 .robert-message-assistant {
     background: #2a2a2a !important;
     color: #ffffff !important;
     border: 1px solid #3a3a3a !important;
+    align-self: flex-start !important;
+    border-bottom-left-radius: 4px !important;
 }
 
+/* Zone de saisie */
 .robert-chat-input-area {
-    padding: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 16px 20px !important;
     background: #1a1a1a !important;
     border-top: 1px solid #333333 !important;
-    display: flex !important;
-    gap: 0.5rem !important;
+    border-radius: 0 0 20px 20px !important;
+    height: 70px !important;
     flex-shrink: 0 !important;
 }
 
+/* Champ de saisie - CRITIQUE pour la saisie */
 .robert-chat-input {
     flex: 1 !important;
+    height: 40px !important;
+    padding: 12px 16px !important;
     background: #2a2a2a !important;
     border: 1px solid #3a3a3a !important;
-    border-radius: 0.75rem !important;
-    padding: 0.75rem !important;
+    border-radius: 12px !important;
     color: #ffffff !important;
-    font-size: 0.9rem !important;
-    font-family: inherit !important;
+    font-size: 14px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    line-height: 1.4 !important;
+    outline: none !important;
+    resize: none !important;
+    
+    /* ESSENTIEL pour la saisie */
+    pointer-events: auto !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    
+    /* Focus states */
+    transition: all 0.2s ease !important;
 }
 
 .robert-chat-input:focus {
-    outline: none !important;
     border-color: #f97316 !important;
+    background: #333333 !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
 .robert-chat-input::placeholder {
     color: #71717a !important;
 }
 
+/* Bouton d'envoi */
 .robert-send-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
     background: #f97316 !important;
     border: none !important;
-    border-radius: 0.75rem !important;
-    padding: 0.75rem 1rem !important;
+    border-radius: 12px !important;
     color: white !important;
+    font-size: 16px !important;
     cursor: pointer !important;
-    font-size: 0.9rem !important;
-    transition: all 0.2s !important;
-    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
 }
 
 .robert-send-btn:hover {
     background: #ea580c !important;
+    transform: scale(1.05) !important;
 }
 
-/* Notifications */
-.robert-notification {
+/* Animations */
+@keyframes slideInFromRight {
+    from {
+        transform: translateY(-50%) translateX(100%) scale(0.95) !important;
+        opacity: 0 !important;
+    }
+    to {
+        transform: translateY(-50%) translateX(0) scale(1) !important;
+        opacity: 1 !important;
+    }
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0 !important;
+        transform: translateY(10px) !important;
+    }
+    to {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+}
+
+/* Login Portal - même style moderne SOMBRE */
+.robert-login-portal {
+    /* Même isolation que le chat */
+    all: initial !important;
+    
     position: fixed !important;
-    top: 60px !important;
+    top: 50% !important;
     right: 20px !important;
-    background: #111111 !important;
-    border: 1px solid #2a2a2a !important;
-    border-radius: 0.75rem !important;
-    padding: 1rem 1.25rem !important;
-    max-width: 350px !important;
-    min-width: 280px !important;
+    transform: translateY(-50%) !important;
+    width: 380px !important;
+    height: 600px !important;
+    background: #1a1a1a !important;
+    border: 1px solid #333333 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
     z-index: 2147483647 !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.9), 0 0 0 1px rgba(255,255,255,0.1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
     animation: slideInFromRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    text-align: left !important;
-    backdrop-filter: blur(10px) !important;
 }
 
-.robert-notification-success { 
-    border-color: #22c55e !important;
-    background: linear-gradient(135deg, #0f1f13, #1a2e20) !important;
-    box-shadow: 0 10px 30px -5px rgba(34, 197, 94, 0.3), 0 0 0 1px #22c55e !important;
+/* Reset pour le portail de connexion */
+.robert-login-portal *,
+.robert-login-portal *::before,
+.robert-login-portal *::after {
+    all: initial !important;
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
 }
 
-.robert-notification-error { 
+.robert-login-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+.robert-login-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 16px 20px !important;
+    background: #1a1a1a !important;
+    border-bottom: 1px solid #333333 !important;
+    border-radius: 20px 20px 0 0 !important;
+    height: 70px !important;
+    flex-shrink: 0 !important;
+}
+
+.robert-login-header-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex: 1 !important;
+}
+
+.robert-login-logo {
+    display: block !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    border: 2px solid #f97316 !important;
+    object-fit: cover !important;
+}
+
+.robert-login-header-text h1 {
+    display: block !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #f97316 !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.robert-login-header-text p {
+    display: block !important;
+    color: #a1a1aa !important;
+    font-size: 12px !important;
+    margin: 2px 0 0 0 !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+}
+
+.robert-login-close-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 8px !important;
+    color: #a1a1aa !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    transition: all 0.2s ease !important;
+}
+
+.robert-login-close-btn:hover {
+    background: #ef4444 !important;
     border-color: #ef4444 !important;
-    background: linear-gradient(135deg, #2a1f1f, #3a1a1a) !important;
-    box-shadow: 0 10px 30px -5px rgba(239, 68, 68, 0.3), 0 0 0 1px #ef4444 !important;
+    color: #ffffff !important;
 }
 
-.robert-notification-warning { 
+.robert-login-content {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    padding: 24px 20px !important;
+    background: #1a1a1a !important;
+    overflow-y: auto !important;
+}
+
+.robert-login-welcome {
+    display: block !important;
+    text-align: center !important;
+    margin-bottom: 24px !important;
+}
+
+.robert-login-welcome h2 {
+    display: block !important;
+    color: #f97316 !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    margin: 0 0 8px 0 !important;
+}
+
+.robert-login-welcome p {
+    display: block !important;
+    color: #a1a1aa !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+}
+
+.robert-login-form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+.robert-form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+.robert-form-group label {
+    display: block !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+.robert-form-input {
+    display: block !important;
+    width: 100% !important;
+    height: 40px !important;
+    padding: 12px 16px !important;
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 8px !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    line-height: 1.4 !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    
+    /* ESSENTIEL pour la saisie */
+    pointer-events: auto !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+}
+
+.robert-form-input:focus {
     border-color: #f97316 !important;
-    background: linear-gradient(135deg, #2a1f0a, #3a2a0f) !important;
-    box-shadow: 0 10px 30px -5px rgba(249, 115, 22, 0.3), 0 0 0 1px #f97316 !important;
+    background: #333333 !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
-@keyframes slideInFromRight {
-    from { 
-        transform: translateX(50%) translateY(0); 
-        opacity: 0; 
-    }
-    to { 
-        transform: translateX(0) translateY(0);
-        opacity: 1;         opacity: 1;
-    }
+.robert-form-input::placeholder {
+    color: #71717a !important;
 }
 
-@keyframes slideOutToRight {
-    from { 
-        transform: translateX(0) scale(1);
-        opacity: 1;
-        font-style: italic;
-    }
-    to { 
-        transform: translateX(100%) scale(0.95);
-        opacity: 0;
-    }
-}
-.mon-element {
-    animation: slideOutToRight 5s ease-in-out infinite;
-}
-
-
-/* Indicateur de frappe */
-.robert-typing {
-    opacity: 0.7 !important;
-    font-style: italic !important;
-    animation: pulse 1.5s ease-in-out infinite !important;
+.robert-login-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: 40px !important;
+    padding: 12px 16px !important;
+    background: #f97316 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
 }
 
-.robert-typing::after {
-    content: '' !important;
-    display: inline-block !important;
-    width: 0 !important;
-    height: 1em !important;
-    border-right: 2px solid #f97316 !important;
-    animation: blink 1s infinite !important;
-    margin-left: 5px !important;
+.robert-login-btn:hover {
+    background: #ea580c !important;
+    transform: translateY(-1px) !important;
 }
 
-@keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
+.robert-login-btn:disabled {
+    background: #3a3a3a !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.robert-login-spinner {
+    animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg) !important; }
+    to { transform: rotate(360deg) !important; }
+}
+
+.robert-login-separator {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 20px 0 !important;
+    color: #71717a !important;
+    font-size: 14px !important;
+}
+
+.robert-separator-line {
+    flex: 1 !important;
+    height: 1px !important;
+    background: #333333 !important;
+}
+
+.robert-create-account-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    padding: 12px 16px !important;
+    background: #6366f1 !important;
+    border: 1px solid #6366f1 !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-size: 14px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.robert-create-account-btn:hover {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    transform: translateY(-1px) !important;
+}
+
+.robert-account-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 6px !important;
+    font-size: 16px !important;
+    flex-shrink: 0 !important;
+}
+
+.robert-account-content {
+    display: block !important;
+}
+
+.robert-account-content h4 {
+    display: block !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    margin: 0 0 2px 0 !important;
+    line-height: 1.2 !important;
+}
+
+.robert-account-content p {
+    display: block !important;
+    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.robert-login-error {
+    display: block !important;
+    margin-top: 12px !important;
+    padding: 12px !important;
+    background: #2a1f1f !important;
+    border: 1px solid #ef4444 !important;
+    border-radius: 8px !important;
+}
+
+.robert-error-message {
+    display: block !important;
+    color: #ef4444 !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    text-align: center !important;
 }
 
 /* Responsive */
 @media (max-width: 480px) {
-    .robert-chat-popup {
+    .robert-chat-popup,
+    .robert-login-portal {
         left: 10px !important;
         right: 10px !important;
+        top: 10px !important;
+        bottom: 10px !important;
         width: calc(100vw - 20px) !important;
         height: calc(100vh - 20px) !important;
-        top: 10px !important;
         transform: none !important;
+        border-radius: 20px !important;
+    }
+}
+
+@media (max-height: 700px) {
+    .robert-chat-popup {
+        height: calc(100vh - 40px) !important;
+        top: 20px !important;
+        transform: translateY(0) !important;
+    }
+    
+    .robert-login-portal {
+        height: calc(100vh - 40px) !important;
+        top: 20px !important;
+        transform: translateY(0) !important;
     }
 }
 

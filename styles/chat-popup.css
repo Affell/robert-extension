@@ -1,96 +1,107 @@
 .robert-chat-popup {
     position: fixed;
-    top: 20px;
+    top: 50%;
     right: 20px;
-    width: 400px;
-    height: 600px;
+    transform: translateY(-50%);
+    width: 420px;
+    height: 650px;
     background: #1a1a1a;
     border: 1px solid #333333;
-    border-radius: 12px;
+    border-radius: 16px;
     z-index: 2147483647;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: #ffffff;
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.8);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 
+                0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: slideInFromRight 0.3s ease-out;
+    animation: slideInFromRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(20px);
 }
 
 @keyframes slideInFromRight {
     from {
-        transform: translateX(100%);
+        transform: translateY(-50%) translateX(100%) scale(0.95);
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: translateY(-50%) translateX(0) scale(1);
         opacity: 1;
     }
 }
 
-.chat-popup-container {
+.robert-chat-container {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
 }
 
-.chat-popup-header {
-    padding: 1.5rem;
-    background: #1a1a1a;
+.robert-chat-header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border-bottom: 1px solid #333333;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
+    border-radius: 16px 16px 0 0;
 }
 
-.logo-container {
+.robert-header-content {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex: 1;
 }
 
-.logo {
-    width: 48px;
-    height: 48px;
-    border-radius: 0.5rem;
+.robert-chat-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
     object-fit: cover;
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+    border: 2px solid #f97316;
 }
 
-.popup-title {
-    font-size: 1.5rem;
-    font-weight: 600;
+.robert-header-text h1 {
+    font-size: 1.375rem;
+    font-weight: 700;
     color: #f97316;
     margin: 0;
     line-height: 1.2;
 }
 
-.popup-subtitle {
+.robert-header-text p {
     color: #a1a1aa;
     font-size: 0.875rem;
-    margin: 0;
-    line-height: 1.2;
+    margin: 0.25rem 0 0 0;
+    font-weight: 500;
 }
 
-.close-btn {
-    background: none;
-    border: none;
+.robert-close-btn {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
     color: #a1a1aa;
     cursor: pointer;
-    font-size: 1.5rem;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    transition: all 0.2s;
-    width: 40px;
-    height: 40px;
+    font-size: 1.25rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 300;
 }
 
-.close-btn:hover {
-    background: #2a2a2a;
+.robert-close-btn:hover {
+    background: #ef4444;
+    border-color: #ef4444;
     color: #ffffff;
+    transform: scale(1.05);
 }
 
 .chat-popup-content {
