@@ -31,16 +31,21 @@
 
 body {
     width: 400px;
+    height: 600px; /* Hauteur fixe pour éviter l'expansion */
+    max-height: 600px; /* Hauteur maximale fixe */
     min-height: 500px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: #1a1a1a;
     color: #ffffff;
+    overflow: hidden; /* Empêcher le scroll externe */
 }
 
 .popup-container {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    overflow: hidden; /* Empêcher le scroll du conteneur principal */
 }
 
 .popup-header {
@@ -86,6 +91,9 @@ body {
     flex-direction: column;
     gap: 1.5rem;
     flex: 1;
+    overflow-y: visible; /* CHANGÉ : permettre au contenu de s'étendre */
+    overflow-x: hidden;
+    min-height: 0; /* Important pour le flex */
 }
 
 .feature-grid {
@@ -774,4 +782,298 @@ body {
     .login-separator {
         margin: 1rem 0;
     }
+}
+
+/* Popup agrandie pour l'analyse - CORRECTION MAJEURE */
+body.expanded-popup {
+    width: 400px;
+    height: 700px;
+    max-height: 700px;
+    min-height: 700px;
+    overflow-y: auto; /* AJOUTÉ : permettre le scroll sur le body entier */
+    overflow-x: hidden;
+}
+
+body.expanded-popup .popup-container {
+    width: 100%;
+    min-height: 100%; /* CHANGÉ : hauteur minimale au lieu de fixe */
+    max-height: none; /* AJOUTÉ : enlever la limitation de hauteur */
+    overflow: visible; /* CHANGÉ : permettre l'expansion du conteneur */
+}
+
+/* Section des résultats d'analyse */
+.analysis-result {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    margin: 12px 0; /* Réduire les marges */
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Ne pas rétrécir */
+}
+
+.analysis-result.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.analysis-result.hidden {
+    display: none;
+}
+
+/* Header de l'analyse */
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px; /* Réduire le padding pour économiser l'espace */
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+}
+
+.analysis-domain h3 {
+    margin: 0 0 4px 0;
+    font-size: 14px; /* Réduire la taille de police */
+    font-weight: 600;
+}
+
+.domain-name {
+    margin: 0;
+    font-size: 12px; /* Réduire la taille de police */
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.close-analysis-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 28px; /* Réduire la taille */
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.close-analysis-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Section du score */
+.score-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px; /* Réduire le padding horizontal */
+    background: #2a2a2a;
+    border-bottom: 1px solid #333;
+}
+
+.score-circle {
+    position: relative;
+    width: 70px; /* Réduire la taille */
+    height: 70px;
+    border: 4px solid;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    background: #1a1a1a;
+}
+
+.score-number {
+    font-size: 20px; /* Réduire la taille */
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-total {
+    font-size: 12px; /* Réduire la taille */
+    color: #888;
+    margin-left: 2px;
+}
+
+.score-status {
+    font-size: 14px; /* Réduire la taille */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Contenu de l'analyse - GESTION DU SCROLL SUPPRIMÉE */
+.analysis-content {
+    padding: 16px;
+    max-height: none; /* CHANGÉ : enlever la limitation de hauteur */
+    overflow: visible; /* CHANGÉ : enlever le scroll interne */
+}
+
+.analysis-content h4 {
+    margin: 0 0 12px 0; /* Réduire les marges */
+    color: #f97316;
+    font-size: 13px; /* Réduire la taille */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.analysis-text {
+    color: #e5e5e5;
+    font-size: 13px; /* Réduire la taille de police */
+    line-height: 1.5; /* Réduire la hauteur de ligne */
+}
+
+.analysis-text p {
+    margin: 0 0 10px 0; /* Réduire les marges */
+}
+
+.analysis-text ul {
+    margin: 6px 0; /* Réduire les marges */
+    padding-left: 16px; /* Réduire l'indentation */
+}
+
+.analysis-text li {
+    margin: 3px 0; /* Réduire les marges */
+    color: #d1d5db;
+}
+
+.analysis-text strong {
+    color: #f97316;
+    font-weight: 600;
+}
+
+.analysis-text em {
+    color: #a1a1aa;
+    font-style: italic;
+}
+
+/* Actions de l'analyse */
+.analysis-actions {
+    display: flex;
+    gap: 8px; /* Réduire l'espacement */
+    padding: 16px; /* Réduire le padding */
+    background: #2a2a2a;
+    border-top: 1px solid #333;
+}
+
+.action-btn {
+    flex: 1;
+    height: 36px; /* Réduire la hauteur */
+    border: none;
+    border-radius: 6px; /* Réduire le radius */
+    font-size: 12px; /* Réduire la taille de police */
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px; /* Réduire l'espacement */
+    padding: 0 8px; /* Ajouter du padding horizontal */
+}
+
+.action-btn.primary {
+    background: #f97316;
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background: #ea580c;
+    transform: translateY(-1px);
+}
+
+.action-btn.secondary {
+    background: #3a3a3a;
+    color: #d1d5db;
+    border: 1px solid #4a4a4a;
+}
+
+.action-btn.secondary:hover {
+    background: #4a4a4a;
+    color: white;
+}
+
+/* Responsive pour popup agrandie - SIMPLIFICATION */
+@media (max-height: 700px) {
+    body.expanded-popup {
+        height: 90vh;
+        max-height: 90vh;
+        min-height: 500px;
+    }
+}
+
+/* Correction pour éviter la réduction de taille */
+@media (min-height: 500px) {
+    body {
+        height: 600px;
+        max-height: 600px;
+        min-height: 500px;
+        overflow: hidden; /* Pas de scroll en mode normal */
+    }
+    
+    body.expanded-popup {
+        height: 700px;
+        max-height: none; /* CHANGÉ : permettre l'expansion */
+        min-height: 700px;
+        overflow-y: auto; /* Scroll uniquement en mode étendu */
+    }
+}
+
+/* Classes pour gérer l'état d'expansion sans réduction - SIMPLIFICATION */
+.popup-container.analyzing {
+    height: 100%; /* Toujours 100% du conteneur parent */
+    overflow: hidden;
+}
+
+.popup-container:not(.analyzing) {
+    height: 100%; /* Toujours 100% du conteneur parent */
+    overflow: hidden;
+}
+
+/* NOUVELLES RÈGLES POUR CONTRÔLER LE DÉFILEMENT */
+.popup-content.with-analysis {
+    gap: 1rem; /* Réduire l'espacement quand il y a une analyse */
+}
+
+/* Gestion spécifique du scroll pour éviter les doubles barres */
+.popup-content::-webkit-scrollbar {
+    display: none; /* AJOUTÉ : masquer la scrollbar du popup-content */
+}
+
+/* Scrollbar uniquement pour le body */
+body::-webkit-scrollbar {
+    width: 8px;
+}
+
+body::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+}
+
+/* Masquer les scrollbars sur les éléments qui ne doivent pas en avoir */
+.feature-grid,
+.status,
+.analysis-result,
+.analysis-header,
+.score-section,
+.analysis-actions {
+    overflow: visible; /* Pas de scroll sur ces éléments */
 }
