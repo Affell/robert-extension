@@ -93,6 +93,9 @@ window.ChatPopup = class ChatPopup {
         this.sendQuestionToAPI(message);
     }async sendQuestionToAPI(question) {
         try {
+            console.log('=== CHAT POPUP - ENVOI QUESTION ===');
+            console.log('Question:', question);
+            
             this.addTypingIndicator();
             
             const response = await this.makeAuthenticatedRequest('/chat/query', {
@@ -103,45 +106,79 @@ window.ChatPopup = class ChatPopup {
                 })
             });
 
+            console.log('Réponse chat popup API:', response);
             this.removeTypingIndicator();
             
             if (response?.response) {
                 this.addMessage(response.response, 'assistant');
+            } else if (response?.data?.response) {
+                this.addMessage(response.data.response, 'assistant');
             } else {
+                console.warn('Format de réponse inattendu:', response);
                 this.addMessage("Je n'ai pas pu traiter votre demande. Veuillez réessayer.", 'assistant');
             }
             
         } catch (error) {
+            console.error('=== ERREUR CHAT POPUP ===');
+            console.error('Error:', error);
+            
             this.removeTypingIndicator();
             this.handleApiError(error);
         }
     }
 
     handleApiError(error) {
+        console.log('Gestion erreur chat popup:', error.message);
+        
         const errorMessages = {
-            'Utilisateur non connecté': "Veuillez vous connecter pour utiliser le chat.",
-            'Session expirée': "Votre session a expiré. Veuillez vous reconnecter."
+            'Utilisateur non connecté': "🔒 Veuillez vous connecter pour utiliser le chat.",
+            'Session expirée': "⏰ Votre session a expiré. Veuillez vous reconnecter.",
+            'Erreur de communication avec l\'extension': "🔧 Erreur d'extension. Rechargez la page.",
+            'Connexion impossible à l\'API. Vérifiez que Docker est démarré.': "🐳 API non disponible. Vérifiez que Docker est démarré."
         };
         
-        const message = errorMessages[error.message] || "Erreur de connexion. Veuillez réessayer plus tard.";
+        const message = errorMessages[error.message] || `❌ Erreur: ${error.message}`;
         this.addMessage(message, 'assistant');
     }    async makeAuthenticatedRequest(endpoint, options = {}) {
+        console.log('=== DÉBUT REQUÊTE CHAT POPUP ===');
+        console.log('Endpoint:', endpoint);
+        
         const { authToken } = await chrome.storage.local.get(['authToken']);
+        console.log('Token disponible:', authToken ? 'OUI' : 'NON');
 
         if (!authToken) {
+            console.error('❌ Pas de token dans chat popup');
             throw new Error('Utilisateur non connecté');
         }
 
-        const response = await chrome.runtime.sendMessage({
-            action: 'makeApiRequest',
-            data: { endpoint, options, authToken }
+        console.log('Envoi via background script...');
+        
+        return new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+                action: 'makeApiRequest',
+                data: { endpoint, options, authToken }
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('❌ Chrome Runtime Error:', chrome.runtime.lastError);
+                    reject(new Error('Erreur de communication avec l\'extension'));
+                    return;
+                }
+
+                console.log('Réponse chat popup:', response);
+
+                if (!response) {
+                    reject(new Error('Aucune réponse du serveur'));
+                    return;
+                }
+
+                if (!response.success) {
+                    reject(new Error(response.error || 'Erreur API inconnue'));
+                    return;
+                }
+
+                resolve(response.data);
+            });
         });
-
-        if (!response.success) {
-            throw new Error(response.error);
-        }
-
-        return response.data;
     }
 
     addTypingIndicator() {
