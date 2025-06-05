@@ -59,10 +59,9 @@
 .robert-chat-logo {
     width: 52px;
     height: 52px;
-    border-radius: 12px;
+    border-radius: 12px !important;
     object-fit: cover;
     box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
-    border: 2px solid #f97316;
 }
 
 .robert-header-text h1 {

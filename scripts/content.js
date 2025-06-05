@@ -6,6 +6,7 @@ if (typeof window.RobertExtension === 'undefined') {
             this.chatPopup = null;
             this.floatingLogo = null;
             this.isInitialized = false;
+            this.isAuthenticated = false;
             this.predefinedQuestions = [
                 "Comment créer un mot de passe sécurisé ?",
                 "Comment protéger mes données personnelles en ligne ?",
@@ -22,39 +23,54 @@ if (typeof window.RobertExtension === 'undefined') {
             this.setupStorageListener();
             this.checkAuthAndUPHF();
             this.isInitialized = true;
-        }        setupStorageListener() {
+        }
+
+        setupStorageListener() {
             chrome.storage.onChanged.addListener((changes, areaName) => {
                 if (areaName === 'local' && (changes.authToken || changes.isLoggedIn)) {
                     this.checkAuthAndUPHF();
                 }
             });
-        }        async checkAuthAndUPHF() {
+        }
+
+        async checkAuthAndUPHF() {
             try {
                 const { authToken, isLoggedIn } = await chrome.storage.local.get(['authToken', 'isLoggedIn']);
                 
-                if (!authToken || !isLoggedIn) {
-                    this.removeFloatingLogo();
-                    return;
-                }
+                // Vérifier l'état d'authentification
+                this.isAuthenticated = !!(authToken && isLoggedIn);
 
                 const isUPHFSite = window.location.hostname.endsWith('.uphf.fr') || 
                                   window.location.hostname === 'uphf.fr';
                 
                 if (isUPHFSite) {
+                    // Toujours afficher le logo sur les sites UPHF
                     await this.createFloatingLogo();
                 } else {
                     this.removeFloatingLogo();
                 }
             } catch (error) {
                 console.error('Erreur vérification auth:', error);
-                this.removeFloatingLogo();
+                this.isAuthenticated = false;
+                // Garder le logo si on est sur UPHF même en cas d'erreur
+                const isUPHFSite = window.location.hostname.endsWith('.uphf.fr') || 
+                                  window.location.hostname === 'uphf.fr';
+                if (isUPHFSite) {
+                    await this.createFloatingLogo();
+                } else {
+                    this.removeFloatingLogo();
+                }
             }
-        }        removeFloatingLogo() {
+        }
+
+        removeFloatingLogo() {
             if (this.floatingLogo?.parentNode) {
                 this.floatingLogo.remove();
                 this.floatingLogo = null;
             }
-        }        async createFloatingLogo() {
+        }
+
+        async createFloatingLogo() {
             if (this.floatingLogo && document.body.contains(this.floatingLogo)) {
                 return;
             }
@@ -71,12 +87,22 @@ if (typeof window.RobertExtension === 'undefined') {
                     logoImg.src = chrome.runtime.getURL('icons/logo_robert.png');
                 }
 
-                this.floatingLogo.addEventListener('click', () => this.openChatWidget());
+                // Adapter le comportement selon l'état d'authentification
+                this.floatingLogo.addEventListener('click', () => {
+                    if (this.isAuthenticated) {
+                        this.openChatWidget();
+                    } else {
+                        this.openExtensionPopup();
+                    }
+                });
+                
                 document.body.appendChild(this.floatingLogo);
             } catch (error) {
                 console.error('Erreur création logo flottant:', error);
             }
-        }        setupMessageListener() {
+        }
+
+        setupMessageListener() {
             chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const actions = {
                     "openChat": () => this.openChatWidget(),
@@ -99,12 +125,26 @@ if (typeof window.RobertExtension === 'undefined') {
                 
                 return true;
             });
-        }openChatWidget() {
+        }
+
+        openChatWidget() {
             if (this.chatPopup) {
                 this.closeChatWidget();
                 return;
             }
             this.createChatPopup();
+        }
+
+        openExtensionPopup() {
+            console.log('Ouverture de l\'extension popup...');
+            // Envoyer un message au background script pour ouvrir l'extension
+            chrome.runtime.sendMessage({ action: 'openPopup' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.warn('Impossible d\'ouvrir le popup:', chrome.runtime.lastError);
+                } else {
+                    console.log('Extension popup ouverte avec succès');
+                }
+            });
         }
 
         async createChatPopup() {
@@ -142,7 +182,9 @@ if (typeof window.RobertExtension === 'undefined') {
             } catch (error) {
                 console.error('Erreur lors de la création du chat:', error);
             }
-        }        async loadTemplate(templateName) {
+        }
+
+        async loadTemplate(templateName) {
             const templateUrl = chrome.runtime.getURL(`templates/${templateName}`);
             const response = await fetch(templateUrl);
             
@@ -151,7 +193,9 @@ if (typeof window.RobertExtension === 'undefined') {
             }
             
             return await response.text();
-        }        async makeAuthenticatedRequest(endpoint, options = {}) {
+        }
+
+        async makeAuthenticatedRequest(endpoint, options = {}) {
             const { authToken } = await chrome.storage.local.get(['authToken']);
             
             if (!authToken) {
@@ -168,13 +212,17 @@ if (typeof window.RobertExtension === 'undefined') {
             }
 
             return response.data;
-        }        handleQuestion(question) {
+        }
+
+        handleQuestion(question) {
             const welcome = this.chatPopup.querySelector('#robert-chat-welcome');
             if (welcome) welcome.classList.add('hidden');
 
             this.addMessage(question, 'user');
             this.sendQuestionToAPI(question);
-        }        sendMessage() {
+        }
+
+        sendMessage() {
             const input = this.chatPopup.querySelector('#robert-chat-input');
             const message = input.value.trim();
             if (!message) return;
@@ -187,7 +235,9 @@ if (typeof window.RobertExtension === 'undefined') {
             this.addMessage(message, 'user');
             input.value = '';
             this.sendQuestionToAPI(message);
-        }async sendQuestionToAPI(question) {
+        }
+
+        async sendQuestionToAPI(question) {
             try {
                 this.addTypingIndicator();
                 
@@ -240,7 +290,9 @@ if (typeof window.RobertExtension === 'undefined') {
             if (typingIndicator) {
                 typingIndicator.remove();
             }
-        }        addMessage(text, sender) {
+        }
+
+        addMessage(text, sender) {
             const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
             
             const messageEl = document.createElement('div');
@@ -255,7 +307,9 @@ if (typeof window.RobertExtension === 'undefined') {
             
             messagesContainer.appendChild(messageEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }        parseMarkdown(text) {
+        }
+
+        parseMarkdown(text) {
             // Convertir les sauts de ligne
             let html = text.replace(/\n/g, '<br>');
             
@@ -294,21 +348,30 @@ if (typeof window.RobertExtension === 'undefined') {
             });
             
             return html;
-        }closeChatWidget() {
+        }
+
+        closeChatWidget() {
             if (this.chatPopup) {
                 this.chatPopup.remove();
                 this.chatPopup = null;
             }
-        }        handleAuthStateChanged(isLoggedIn) {
+        }
+
+        handleAuthStateChanged(isLoggedIn) {
             console.log('État d\'authentification changé:', isLoggedIn);
             
+            this.isAuthenticated = isLoggedIn;
+            
             if (!isLoggedIn) {
-                // L'utilisateur s'est déconnecté - supprimer le logo flottant et fermer le chat
-                this.removeFloatingLogo();
+                // L'utilisateur s'est déconnecté - fermer le chat mais garder le logo
                 this.closeChatWidget();
-            } else {
-                // L'utilisateur s'est connecté - vérifier si on doit afficher le logo
-                this.checkAuthAndUPHF();
+            }
+            
+            // Le logo reste affiché sur les sites UPHF dans tous les cas
+            const isUPHFSite = window.location.hostname.endsWith('.uphf.fr') || 
+                              window.location.hostname === 'uphf.fr';
+            if (isUPHFSite && !this.floatingLogo) {
+                this.createFloatingLogo();
             }
         }
     }
