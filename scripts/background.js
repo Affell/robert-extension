@@ -41,12 +41,18 @@ async function reloadAllContentScripts() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Message reçu dans background:', request);
     
-    // Gérer les requêtes API
-    if (request.action === 'makeApiRequest') {
-        handleApiRequest(request.data)
-            .then(response => sendResponse({ success: true, data: response }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true; // Indique une réponse asynchrone
+    if (request.action === 'openPopup') {
+        console.log('Tentative d\'ouverture du popup...');
+        try {
+            // Utiliser chrome.action.openPopup() pour ouvrir l'extension
+            chrome.action.openPopup();
+            console.log('Popup ouvert via chrome.action.openPopup()');
+            sendResponse({ success: true });
+        } catch (error) {
+            console.warn('Impossible d\'ouvrir le popup via action:', error);
+            sendResponse({ success: false, error: error.message });
+        }
+        return true;
     }
     
     // Répondre immédiatement pour les autres messages

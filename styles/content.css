@@ -149,7 +149,6 @@
     width: 40px !important;
     height: 40px !important;
     border-radius: 50% !important;
-    border: 2px solid #f97316 !important;
     object-fit: cover !important;
 }
 
@@ -664,12 +663,6 @@
     text-align: left !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
-}
-
-.robert-create-account-btn:hover {
-    background: #4f46e5 !important;
-    border-color: #4f46e5 !important;
-    transform: translateY(-1px) !important;
 }
 
 .robert-account-icon {
