@@ -196,22 +196,49 @@ if (typeof window.RobertExtension === 'undefined') {
         }
 
         async makeAuthenticatedRequest(endpoint, options = {}) {
+            console.log('=== DÉBUT REQUÊTE AUTHENTIFIÉE ===');
+            console.log('Endpoint:', endpoint);
+            console.log('Options:', options);
+            
             const { authToken } = await chrome.storage.local.get(['authToken']);
+            console.log('Token récupéré:', authToken ? 'OUI' : 'NON');
             
             if (!authToken) {
+                console.error('❌ Aucun token d\'authentification trouvé');
                 throw new Error('Utilisateur non connecté');
             }
 
-            const response = await chrome.runtime.sendMessage({
-                action: 'makeApiRequest',
-                data: { endpoint, options, authToken }
+            console.log('Envoi de la requête via background script...');
+            
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    action: 'makeApiRequest',
+                    data: { endpoint, options, authToken }
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('❌ Erreur Chrome Runtime:', chrome.runtime.lastError);
+                        reject(new Error('Erreur de communication avec l\'extension'));
+                        return;
+                    }
+                    
+                    console.log('Réponse reçue du background:', response);
+                    
+                    if (!response) {
+                        console.error('❌ Aucune réponse du background script');
+                        reject(new Error('Aucune réponse du serveur'));
+                        return;
+                    }
+
+                    if (!response.success) {
+                        console.error('❌ Échec de la requête API:', response.error);
+                        reject(new Error(response.error || 'Erreur API inconnue'));
+                        return;
+                    }
+
+                    console.log('✅ Requête API réussie');
+                    resolve(response.data);
+                });
             });
-
-            if (!response.success) {
-                throw new Error(response.error);
-            }
-
-            return response.data;
         }
 
         handleQuestion(question) {
@@ -239,6 +266,9 @@ if (typeof window.RobertExtension === 'undefined') {
 
         async sendQuestionToAPI(question) {
             try {
+                console.log('=== ENVOI QUESTION À L\'API ===');
+                console.log('Question:', question);
+                
                 this.addTypingIndicator();
                 
                 const response = await this.makeAuthenticatedRequest('/chat/query', {
@@ -249,27 +279,40 @@ if (typeof window.RobertExtension === 'undefined') {
                     })
                 });
 
+                console.log('Réponse API reçue:', response);
                 this.removeTypingIndicator();
                 
                 if (response?.response) {
                     this.addMessage(response.response, 'assistant');
+                } else if (response?.data?.response) {
+                    this.addMessage(response.data.response, 'assistant');
                 } else {
+                    console.warn('Format de réponse inattendu:', response);
                     this.addMessage("Je n'ai pas pu traiter votre demande. Veuillez réessayer.", 'assistant');
                 }
                 
             } catch (error) {
+                console.error('=== ERREUR ENVOI QUESTION ===');
+                console.error('Type:', error.name);
+                console.error('Message:', error.message);
+                console.error('Stack:', error.stack);
+                
                 this.removeTypingIndicator();
                 this.handleApiError(error);
             }
         }
 
         handleApiError(error) {
+            console.log('Gestion de l\'erreur API:', error.message);
+            
             const errorMessages = {
-                'Utilisateur non connecté': "Veuillez vous connecter pour utiliser le chat.",
-                'Session expirée': "Votre session a expiré. Veuillez vous reconnecter."
+                'Utilisateur non connecté': "🔒 Veuillez vous connecter pour utiliser le chat.",
+                'Session expirée': "⏰ Votre session a expiré. Veuillez vous reconnecter.",
+                'Erreur de communication avec l\'extension': "🔧 Erreur d'extension. Rechargez la page.",
+                'Connexion impossible à l\'API. Vérifiez que Docker est démarré.': "🐳 API non disponible. Vérifiez que Docker est démarré."
             };
             
-            const message = errorMessages[error.message] || "Erreur de connexion. Veuillez réessayer plus tard.";
+            const message = errorMessages[error.message] || `❌ Erreur: ${error.message}`;
             this.addMessage(message, 'assistant');
         }
 

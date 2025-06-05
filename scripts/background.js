@@ -44,7 +44,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'openPopup') {
         console.log('Tentative d\'ouverture du popup...');
         try {
-            // Utiliser chrome.action.openPopup() pour ouvrir l'extension
             chrome.action.openPopup();
             console.log('Popup ouvert via chrome.action.openPopup()');
             sendResponse({ success: true });
@@ -53,6 +52,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ success: false, error: error.message });
         }
         return true;
+    }
+    
+    // AJOUTÉ : Gestionnaire pour les requêtes API
+    if (request.action === 'makeApiRequest') {
+        console.log('Requête API reçue:', request.data);
+        
+        handleApiRequest(request.data)
+            .then(data => {
+                console.log('Réponse API réussie:', data);
+                sendResponse({ success: true, data: data });
+            })
+            .catch(error => {
+                console.error('Erreur API:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+        
+        return true; // Maintenir la connexion pour réponse asynchrone
     }
     
     // Répondre immédiatement pour les autres messages
