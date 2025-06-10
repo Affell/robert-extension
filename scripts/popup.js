@@ -1805,17 +1805,17 @@ Contenu:
             
             console.log('Popup réduite à 600px de hauteur fixe');
         }, 100);
-    }
-
-    formatAnalysisText(text) {
+    }    formatAnalysisText(text) {
         // Convertir le texte brut en HTML formaté avec optimisation pour espace restreint
         let formatted = text
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br>')
             .replace(/^/, '<p>')
             .replace(/$/, '</p>')
-            .replace(/- (.+?)(<br>|<\/p>)/g, '<li>$1</li>')
-            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            // MODIFICATION: Supprimer les puces en les convertissant en paragraphes simples
+            .replace(/- (.+?)(<br>|<\/p>)/g, '<p>$1</p>')
+            // Ne plus créer de listes - la ligne suivante est commentée
+            // .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.+?)\*/g, '<em>$1</em>');
         
