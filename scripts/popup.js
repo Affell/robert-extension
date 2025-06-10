@@ -462,10 +462,998 @@ ${htmlContent.substring(0, Math.min(htmlContent.length, maxContentLength - 100))
                 this.setStatus("Réponse vide de l'API", "error");
                 this.hideAnalysisResult();
             }
-            
-        } catch (error) {
+              } catch (error) {
             this.setStatus("Erreur de résumé", "error");
             this.hideAnalysisResult();
+        }
+    }    async checkEmail() {
+        this.setStatus("Analyse email en cours...", "loading");
+        
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            console.log('Onglet actuel pour analyse email:', tab.url);
+            
+            // Détecter le provider d'email
+            const emailProvider = this.detectEmailProvider(tab.url);
+            
+            if (!emailProvider) {
+                console.error('Provider email non supporté pour:', tab.url);
+                this.setStatus("Provider email non supporté", "error");
+                this.showEmailResult("❌ Provider d'email non supporté. Assurez-vous d'être sur Gmail, Outlook, Yahoo Mail ou Zimbra.", null, tab.url);
+                return;
+            }
+            
+            console.log('Provider email détecté:', emailProvider);
+            
+            // SUPPRESSION COMPLÈTE de la vérification - FORCER L'ANALYSE DIRECTE
+            console.log('🔥 ANALYSE FORCÉE - Extraction de TOUT le contenu disponible');
+            
+            // Extraire le contenu de l'email selon le provider
+            let emailData;
+            try {
+                console.log('Début extraction FORCÉE du contenu email...');
+                emailData = await this.extractEmailContent(tab.id, emailProvider);
+                console.log('Données email extraites (FORCÉ):', {
+                    provider: emailData.provider,
+                    extractionType: emailData.extractionType || 'standard',
+                    hasSubject: !!emailData.subject,
+                    subjectLength: emailData.subject?.length || 0,
+                    hasContent: !!emailData.content,
+                    contentLength: emailData.content?.length || 0,
+                    hasFrom: !!emailData.from,
+                    warning: emailData.warning || 'aucune'
+                });
+            } catch (extractError) {
+                console.error('Erreur extraction email:', extractError);
+                this.setStatus("Impossible d'extraire l'email", "error");
+                this.showEmailResult(`❌ Impossible d'extraire le contenu de l'email: ${extractError.message}. Assurez-vous qu'un email est ouvert.`, null, tab.url);
+                return;
+            }
+            
+            // FORCER L'ANALYSE - Même avec contenu minimal
+            console.log('🚀 FORÇAGE de l\'analyse avec TOUT le contenu disponible...');
+            
+            console.log('Envoi FORCÉ des données à l\'API d\'analyse...');
+            
+            // Analyser l'email via l'API /chat/mail - TOUJOURS CONTINUER
+            const analysisResult = await this.callEmailAnalysisAPI(emailData);
+            
+            console.log('Résultat analyse API:', analysisResult);
+            
+            if (analysisResult.error) {
+                console.error('Erreur API:', analysisResult.error);
+                this.setStatus(analysisResult.error, "error");
+                this.showEmailResult(`❌ ${analysisResult.error}`, null, tab.url);
+            } else if (analysisResult.response) {
+                // Essayer d'extraire un score de risque de la réponse
+                const riskMatch = analysisResult.response.match(/risque[:\s]*(\d+)\/100|score[:\s]*(\d+)|danger[:\s]*(\d+)|(\d+)\s*%\s*risque/i);
+                let riskScore = null;
+                
+                if (riskMatch) {
+                    riskScore = riskMatch[1] || riskMatch[2] || riskMatch[3] || riskMatch[4];
+                    console.log('Score de risque extrait:', riskScore);
+                }
+                
+                // Afficher le résultat avec info sur le type d'extraction
+                let resultTitle = '📧 Analyse email - Phishing';
+                if (emailData.extractionType === 'full-text-view') {
+                    resultTitle += ' ✅ (Analyse complète)';
+                } else if (emailData.extractionType === 'interface-limited') {
+                    resultTitle += ' 🔥 (Analyse forcée)';
+                } else {
+                    resultTitle += ' 🛡️ (Analyse disponible)';
+                }
+                
+                this.showEmailResult(analysisResult.response, riskScore, tab.url, emailProvider, emailData.subject, resultTitle);
+                this.setStatus("Analyse email terminée", "success");
+            } else {
+                console.error('Réponse API vide ou invalide:', analysisResult);
+                this.setStatus("Réponse vide de l'API", "error");
+                this.showEmailResult("❌ Aucune réponse de l'API d'analyse", null, tab.url);
+            }
+            
+        } catch (error) {
+            console.error('Erreur générale analyse email:', error);
+            this.setStatus("Erreur d'analyse email", "error");
+            this.showEmailResult(`❌ Erreur lors de l'analyse: ${error.message}`, null, null);
+        }
+    }
+
+    detectEmailProvider(url) {
+        const hostname = new URL(url).hostname.toLowerCase();
+        const fullUrl = url.toLowerCase();
+        
+        console.log('Détection provider pour:', hostname, 'URL complète:', fullUrl);
+        
+        // Gmail (interface web et applications)
+        if (hostname.includes('mail.google.') || hostname.includes('gmail.') || 
+            fullUrl.includes('mail.google.com') || fullUrl.includes('gmail.com')) {
+            console.log('Provider détecté: Gmail');
+            return 'gmail';
+        }
+        
+        // Outlook (Office 365, Outlook.com, Hotmail)
+        if (hostname.includes('outlook.') || hostname.includes('office.') || 
+            hostname.includes('hotmail.') || hostname.includes('live.') ||
+            fullUrl.includes('outlook.office.com') || fullUrl.includes('outlook.live.com')) {
+            console.log('Provider détecté: Outlook');
+            return 'outlook';
+        }
+        
+        // Yahoo Mail
+        if (hostname.includes('mail.yahoo.') || hostname.includes('yahoo.') ||
+            fullUrl.includes('mail.yahoo.com')) {
+            console.log('Provider détecté: Yahoo');
+            return 'yahoo';
+        }
+        
+        // Zimbra (UPHF et autres entreprises)
+        if (hostname.includes('zimbra') || hostname.includes('uphf.fr') || 
+            fullUrl.includes('/zimbra/') || fullUrl.includes('zimbramail') ||
+            hostname.includes('webmail') || fullUrl.includes('webmail')) {
+            console.log('Provider détecté: Zimbra');
+            return 'zimbra';
+        }
+        
+        console.log('Aucun provider reconnu pour:', hostname);
+        return null;
+    }
+
+    async extractEmailContent(tabId, provider) {
+        console.log(`🔥 EXTRACTION FORCÉE contenu email pour provider: ${provider}`);
+        
+        if (!provider) {
+            throw new Error(`Provider non spécifié`);
+        }
+
+        try {
+            let results;
+            
+            // Exécuter le script spécifique au provider en tant que fonction directe
+            if (provider === 'gmail') {
+                results = await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    func: () => {
+                        console.log('Script Gmail - Début extraction');
+                        
+                        // Gmail - sélecteurs améliorés 2024
+                        const subjectSelectors = [
+                            '[data-thread-perm-id] h2',
+                            '.hP',
+                            '.bqe', 
+                            '.ams',
+                            '.bqm',
+                            '.bog',
+                            '[data-legacy-thread-id] h2',
+                            'h2[data-thread-perm-id]',
+                            '.aKs h2',
+                            '.zA .y2 .bqm'
+                        ];
+                        
+                        let subject = '';
+                        for (const selector of subjectSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element && element.textContent?.trim()) {
+                                subject = element.textContent.trim();
+                                console.log('Gmail - Sujet trouvé avec:', selector, subject);
+                                break;
+                            }
+                        }
+
+                        // Contenu principal - sélecteurs étendus pour récupérer HTML
+                        const contentSelectors = [
+                            '.ii.gt .im',
+                            '.adP .im', 
+                            '.adn .im',
+                            '[data-message-id] .im',
+                            '.h7 .im',
+                            '.ii.gt div[dir="ltr"]',
+                            '.ii.gt .a3s',
+                            '.aHl .a3s',
+                            '.gmail_default',
+                            '.ii.gt',
+                            '.adP',
+                            '.adn',
+                            '.h7',
+                            'div[data-message-id]',
+                            '.kix-lineview-text-block',
+                            'div[contenteditable="true"]'
+                        ];
+                        
+                        let content = '';
+                        for (const selector of contentSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                // Récupérer le HTML brut pour conserver les liens
+                                content = element.innerHTML?.trim() || element.textContent?.trim() || '';
+                                if (content) {
+                                    console.log('Gmail - Contenu HTML trouvé avec:', selector, content.substring(0, 100));
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Si pas de contenu spécifique, essayer de prendre tout le contenu visible
+                        if (!content) {
+                            const bodyContent = document.body.innerHTML || document.body.textContent || '';
+                            if (bodyContent.includes('@') || bodyContent.length > 100) {
+                                content = bodyContent.trim();
+                                console.log('Gmail - Contenu HTML fallback:', content.substring(0, 100));
+                            }
+                        }
+
+                        // Expéditeur - sélecteurs étendus pour récupérer l'email
+                        const fromSelectors = [
+                            '.gD',
+                            '.bqn .go .g2',
+                            '[email]',
+                            '.qu [email]',
+                            '.go .g2',
+                            '.yW span[email]',
+                            '.yW .go',
+                            '.ajy .g2'
+                        ];
+                        
+                        let from = '';
+                        for (const selector of fromSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                // Prioriser l'attribut email
+                                const emailAttr = element.getAttribute('email');
+                                if (emailAttr && emailAttr.includes('@')) {
+                                    from = emailAttr;
+                                    console.log('Gmail - Email trouvé via attribut:', selector, from);
+                                    break;
+                                }
+                                
+                                // Sinon extraire l'email du texte
+                                const textContent = element.textContent?.trim() || '';
+                                const emailMatch = textContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+                                if (emailMatch) {
+                                    from = emailMatch[0];
+                                    console.log('Gmail - Email extrait du texte:', selector, from);
+                                    break;
+                                }
+                                
+                                // Fallback sur le contenu textuel s'il contient @
+                                if (textContent.includes('@')) {
+                                    from = textContent;
+                                    console.log('Gmail - Contenu avec @ trouvé:', selector, from);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        console.log('Gmail - Résultat final:', { subject, content: content.substring(0, 100), from });
+                        return { subject, content, from, provider: 'gmail' };
+                    }
+                });
+            } else if (provider === 'outlook') {
+                results = await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    func: () => {
+                        console.log('Script Outlook - Début extraction');
+                        
+                        // Outlook Web App - sélecteurs améliorés
+                        const subjectSelectors = [
+                            '[aria-label*="Subject"]',
+                            '.rps_cc5e .rps_dc36',
+                            'h1[role="heading"]',
+                            '[data-testid="message-subject"]',
+                            '.allowTextSelection h1',
+                            '.rps_dc36',
+                            'h1.rps_dc36'
+                        ];
+                        
+                        let subject = '';
+                        for (const selector of subjectSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element && element.textContent?.trim()) {
+                                subject = element.textContent.trim();
+                                console.log('Outlook - Sujet trouvé avec:', selector, subject);
+                                break;
+                            }
+                        }
+
+                        // Contenu de l'email - sélecteurs étendus pour récupérer HTML
+                        const contentSelectors = [
+                            '[role="document"] .rps_889a',
+                            '.rps_889a',
+                            '[data-app-section="MailCompose"] .rps_8697',
+                            '.allowTextSelection',
+                            '[aria-label="Message body"]',
+                            '[data-testid="message-body"]',
+                            '.rps_8697',
+                            '.elementToProof',
+                            'div[contenteditable="true"]',
+                            '.rps_889a div'
+                        ];
+                        
+                        let content = '';
+                        for (const selector of contentSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                // Récupérer le HTML brut pour conserver les liens
+                                content = element.innerHTML?.trim() || element.textContent?.trim() || '';
+                                if (content) {
+                                    console.log('Outlook - Contenu HTML trouvé avec:', selector, content.substring(0, 100));
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Expéditeur - extraire l'adresse email
+                        const fromSelectors = [
+                            '[aria-label*="From:"]',
+                            '.rps_d875',
+                            '[data-testid="message-from"]',
+                            '.allowTextSelection [email]'
+                        ];
+                        
+                        let from = '';
+                        for (const selector of fromSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                // Prioriser l'attribut email
+                                const emailAttr = element.getAttribute('email');
+                                if (emailAttr && emailAttr.includes('@')) {
+                                    from = emailAttr;
+                                    console.log('Outlook - Email trouvé via attribut:', selector, from);
+                                    break;
+                                }
+                                
+                                // Sinon extraire l'email du texte
+                                const textContent = element.textContent?.trim() || '';
+                                const emailMatch = textContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+                                if (emailMatch) {
+                                    from = emailMatch[0];
+                                    console.log('Outlook - Email extrait du texte:', selector, from);
+                                    break;
+                                }
+                                
+                                // Fallback sur le contenu textuel s'il contient @
+                                if (textContent.includes('@')) {
+                                    from = textContent;
+                                    console.log('Outlook - Contenu avec @ trouvé:', selector, from);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        console.log('Outlook - Résultat final:', { subject, content: content.substring(0, 100), from });
+                        return { subject, content, from, provider: 'outlook' };
+                    }
+                });
+            } else if (provider === 'yahoo') {
+                results = await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    func: () => {
+                        console.log('Script Yahoo - Début extraction');
+                        
+                        // Yahoo Mail - sélecteurs améliorés
+                        const subjectSelectors = [
+                            '[data-test-id="subject"]',
+                            '.D_F',
+                            '[aria-label*="Subject"]'
+                        ];
+                        
+                        let subject = '';
+                        for (const selector of subjectSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element && element.textContent?.trim()) {
+                                subject = element.textContent.trim();
+                                console.log('Yahoo - Sujet trouvé avec:', selector, subject);
+                                break;
+                            }
+                        }
+
+                        // Contenu - récupérer HTML pour conserver les liens
+                        const contentSelectors = [
+                            '[data-test-id="message-body"]',
+                            '.aol_1',
+                            '.kf_V',
+                            '[aria-label*="Message body"]'
+                        ];
+                        
+                        let content = '';
+                        for (const selector of contentSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                // Récupérer le HTML brut pour conserver les liens
+                                content = element.innerHTML?.trim() || element.textContent?.trim() || '';
+                                if (content) {
+                                    console.log('Yahoo - Contenu HTML trouvé avec:', selector, content.substring(0, 100));
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Expéditeur - extraire l'adresse email
+                        const fromSelectors = [
+                            '[data-test-id="sender-email"]',
+                            '.D_F .Q_I',
+                            '[aria-label*="From"]'
+                        ];
+                        
+                        let from = '';
+                        for (const selector of fromSelectors) {
+                            const element = document.querySelector(selector);
+                            if (element) {
+                                // Prioriser l'attribut email
+                                const emailAttr = element.getAttribute('email');
+                                if (emailAttr && emailAttr.includes('@')) {
+                                    from = emailAttr;
+                                    console.log('Yahoo - Email trouvé via attribut:', selector, from);
+                                    break;
+                                }
+                                
+                                // Sinon extraire l'email du texte
+                                const textContent = element.textContent?.trim() || '';
+                                const emailMatch = textContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+                                if (emailMatch) {
+                                    from = emailMatch[0];
+                                    console.log('Yahoo - Email extrait du texte:', selector, from);
+                                    break;
+                                }
+                                
+                                // Fallback sur le contenu textuel s'il contient @
+                                if (textContent.includes('@')) {
+                                    from = textContent;
+                                    console.log('Yahoo - Contenu avec @ trouvé:', selector, from);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        console.log('Yahoo - Résultat final:', { subject, content: content.substring(0, 100), from });
+                        return { subject, content, from, provider: 'yahoo' };
+                    }
+                });            } else if (provider === 'zimbra') {
+                results = await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    func: () => {
+                        console.log('🔥 Script Zimbra - EXTRACTION ULTRA-AGRESSIVE');
+                        
+                        // Vérifier d'abord si on est sur une page de vue texte (view=text)
+                        const currentUrl = window.location.href;
+                        const isTextView = currentUrl.includes('view=text');
+                        
+                        console.log('Zimbra - URL actuelle:', currentUrl);
+                        console.log('Zimbra - Vue texte détectée:', isTextView);
+                        
+                        if (isTextView) {
+                            // EXTRACTION COMPLÈTE DEPUIS VUE TEXTE
+                            console.log('Zimbra - Extraction COMPLÈTE depuis vue texte');
+                            
+                            // Récupérer TOUT le contenu brut de la page
+                            const fullContent = document.body.textContent || document.body.innerText || '';
+                            
+                            console.log('Zimbra - Contenu brut complet (premiers 500 chars):', fullContent.substring(0, 500));
+                            
+                            // Extraire le sujet depuis les headers
+                            let subject = '';
+                            const subjectMatch = fullContent.match(/^Objet\s*:\s*(.+)$/m) || 
+                                                fullContent.match(/^Subject\s*:\s*(.+)$/m);
+                            if (subjectMatch) {
+                                subject = subjectMatch[1].trim();
+                                console.log('Zimbra - Sujet extrait:', subject);
+                            }
+                            
+                            // Extraire l'expéditeur COMPLET depuis les headers
+                            let from = '';
+                            // Chercher "De :" ou "From :" dans les headers
+                            const fromMatch = fullContent.match(/^De\s*:\s*(.+)$/m) || 
+                                            fullContent.match(/^From\s*:\s*(.+)$/m);
+                            if (fromMatch) {
+                                from = fromMatch[1].trim();
+                                console.log('Zimbra - Expéditeur extrait depuis headers:', from);
+                            }
+                            
+                            // NOUVEAU : Extraire le sender depuis Return-Path ou Chemin de retour
+                            let actualSender = '';
+                            const returnPathMatch = fullContent.match(/(?:Return-Path|Chemin de retour)\s*:\s*([^\s\n]+)/i);
+                            if (returnPathMatch) {
+                                actualSender = returnPathMatch[1].trim().replace(/[<>]/g, '');
+                                console.log('Zimbra - Return-Path trouvé:', actualSender);
+                            }
+                            
+                            // Si pas de Return-Path, essayer d'extraire depuis les headers "Reçu" ou "Received"
+                            if (!actualSender) {
+                                const receivedMatch = fullContent.match(/(?:Reçu|Received)\s*:\s*de\s+([^\s\(]+)/i);
+                                if (receivedMatch) {
+                                    actualSender = receivedMatch[1].trim();
+                                    console.log('Zimbra - Sender depuis Received:', actualSender);
+                                }
+                            }
+                            
+                            // Utiliser le sender détecté ou fallback sur l'expéditeur
+                            const finalSender = actualSender || from;
+                            
+                            // CONTENU COMPLET : Prendre TOUT pour l'analyse (headers + corps)
+                            let content = fullContent;
+                            
+                            // Optionnel : limiter la taille si trop volumineux
+                            if (content.length > 15000) {
+                                // Prendre les premiers 10000 chars (headers) + derniers 5000 chars (contenu)
+                                const headersPart = content.substring(0, 10000);
+                                const contentPart = content.substring(content.length - 5000);
+                                content = headersPart + "\n\n[...CONTENU TRONQUÉ...]\n\n" + contentPart;
+                                console.log('Zimbra - Contenu tronqué pour éviter surcharge');
+                            }
+                            
+                            console.log('Zimbra - Extraction vue texte terminée:', {
+                                subject: subject.substring(0, 100),
+                                from: from.substring(0, 100), 
+                                actualSender: finalSender.substring(0, 100),
+                                contentLength: content.length
+                            });
+                            
+                            return { 
+                                subject, 
+                                content, 
+                                from: finalSender, // Utiliser le vrai sender pour l'analyse
+                                provider: 'zimbra',
+                                extractionType: 'full-text-view',
+                                originalFrom: from // Garder l'info du From original
+                            };
+                        }
+                        
+                        // 🔥 EXTRACTION ULTRA-AGRESSIVE DEPUIS INTERFACE NORMALE
+                        console.log('🔥 Zimbra - EXTRACTION ULTRA-AGRESSIVE depuis interface normale');
+                        
+                        let subject = '';
+                        let from = '';
+                        let content = '';
+                        
+                        // 🔥 RÉCUPÉRER TOUT LE CONTENU DE LA PAGE D'ABORD
+                        const allPageContent = document.body.textContent || document.body.innerText || document.body.innerHTML || '';
+                        console.log('🔥 Zimbra - TOUT le contenu de la page (premiers 1000 chars):', allPageContent.substring(0, 1000));
+                        
+                        // EXTRACTION SUPER AGRESSIVE DU SUJET
+                        const subjectSelectors = [
+                            '.SubjectFragment',
+                            '.MsgHdrSubject',
+                            '.ZhCallListPrintView .SubjectFragment',
+                            '[id*="subject"]',
+                            '.ConvListItem .Subject',
+                            'td.SubjectCol',
+                            '.subject',
+                            'h1', 'h2', 'h3', 'h4',
+                            '[title*="Subject"]',
+                            '[aria-label*="Subject"]',
+                            '.ZmMailMsgView h1',
+                            '.ZmMailMsgView h2',
+                            '.ZmMailMsgView .Subject',
+                            '.MsgHdr .Subject',
+                            '.MsgHeaderTable .Subject'
+                        ];
+                        
+                        // Essayer tous les sélecteurs possibles
+                        for (const selector of subjectSelectors) {
+                            const elements = document.querySelectorAll(selector);
+                            for (const element of elements) {
+                                if (element && element.textContent?.trim()) {
+                                    const text = element.textContent.trim();
+                                    if (text.length > 3 && !text.toLowerCase().includes('zimbra') && !text.toLowerCase().includes('loading')) {
+                                        subject = text;
+                                        console.log('🔥 Zimbra - Sujet trouvé avec:', selector, subject);
+                                        break;
+                                    }
+                                }
+                            }
+                            if (subject) break;
+                        }
+                        
+                        // Fallback: extraire depuis le titre ou le contenu
+                        if (!subject) {
+                            const title = document.title || '';
+                            if (title && !title.includes('Zimbra') && title.length > 5) {
+                                subject = title.replace(/^(Re:|Fwd?:|RE:|FW:)\s*/i, '').trim();
+                                console.log('🔥 Zimbra - Sujet depuis titre:', subject);
+                            }
+                        }
+                        
+                        // Si toujours pas de sujet, chercher dans le contenu de la page
+                        if (!subject) {
+                            // Chercher des patterns de sujet dans le contenu
+                            const subjectPatterns = [
+                                /Objet\s*:\s*(.+)/i,
+                                /Subject\s*:\s*(.+)/i,
+                                /Sujet\s*:\s*(.+)/i
+                            ];
+                            
+                            for (const pattern of subjectPatterns) {
+                                const match = allPageContent.match(pattern);
+                                if (match && match[1]) {
+                                    subject = match[1].trim().split('\n')[0]; // Prendre la première ligne
+                                    console.log('🔥 Zimbra - Sujet trouvé dans le contenu:', subject);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // 🔥 EXTRACTION ULTRA-AGGRESSIVE DU CONTENU
+                        const contentSelectors = [
+                            '.MsgBody',
+                            '.ZmMailMsgView .MsgBody',
+                            '.MsgBody-html',
+                            '.MsgBody-text', 
+                            '.ConvListItem .Fragment',
+                            '.ZhACD',
+                            '.MsgBody-original',
+                            'iframe[name="iframeBody"]',
+                            '.zcs-body',
+                            '[id*="msgbody"]',
+                            '.msg-body',
+                            '.ZmMailMsgView div[id*="body"]',
+                            '.ZmMailMsgView .ZmMsgBody',
+                            '.ZmMsgBody',
+                            '.MsgHeaderTable',
+                            '.ZmMailMsgView',
+                            '[id*="MSG"]'
+                        ];
+                        
+                        // Essayer d'extraire du contenu depuis tous les sélecteurs
+                        for (const selector of contentSelectors) {
+                            const elements = document.querySelectorAll(selector);
+                            for (const element of elements) {
+                                if (element) {
+                                    let elementContent = '';
+                                    
+                                    // Pour les iframes - essayer de récupérer l'URL au moins
+                                    if (element.tagName === 'IFRAME') {
+                                        const iframeSrc = element.src || element.getAttribute('src') || '';
+                                        const iframeTitle = element.title || element.getAttribute('title') || '';
+                                        elementContent = `[IFRAME: ${iframeTitle} - ${iframeSrc}]`;
+                                        console.log('🔥 Zimbra - Iframe détectée:', elementContent);
+                                    } else {
+                                        // Récupérer le HTML ET le texte
+                                        const htmlContent = element.innerHTML?.trim() || '';
+                                        const textContent = element.textContent?.trim() || '';
+                                        
+                                        // Prioriser le contenu le plus riche
+                                        elementContent = htmlContent.length > textContent.length ? htmlContent : textContent;
+                                    }
+                                    
+                                    if (elementContent && elementContent.length > 10) {
+                                        content = elementContent;
+                                        console.log('🔥 Zimbra - Contenu trouvé avec:', selector, content.substring(0, 200));
+                                        break;
+                                    }
+                                }
+                            }
+                            if (content) break;
+                        }
+                        
+                        // 🔥 FALLBACK ULTRA-AGRESSIF - PRENDRE TOUT LE CONTENU VISIBLE
+                        if (!content || content.length < 50) {
+                            console.log('🔥 Zimbra - FALLBACK ULTRA-AGRESSIF: extraction de TOUT');
+                            
+                            // Prendre TOUT le contenu de la page
+                            const bodyHTML = document.body.innerHTML || '';
+                            const bodyText = document.body.textContent || document.body.innerText || '';
+                            
+                            // Essayer de nettoyer intelligemment
+                            if (bodyText.length > 100) {
+                                // Filtrer le contenu pour garder ce qui semble être du contenu d'email
+                                const lines = bodyText.split('\n').filter(line => {
+                                    const trimmed = line.trim();
+                                    return trimmed.length > 15 && 
+                                           !trimmed.includes('Zimbra') &&
+                                           !trimmed.includes('Loading') &&
+                                           !trimmed.includes('Copyright') &&
+                                           !trimmed.includes('Navigation') &&
+                                           !trimmed.includes('Menu') &&
+                                           !trimmed.includes('javascript:') &&
+                                           trimmed.includes(' '); // Au moins un espace (phrase complète)
+                                });
+                                
+                                if (lines.length > 0) {
+                                    // Prendre jusqu'à 20 lignes significatives
+                                    content = lines.slice(0, 20).join('\n').trim();
+                                    console.log('🔥 Zimbra - Contenu filtré depuis body:', content.substring(0, 300));
+                                } else {
+                                    // Dernier recours - prendre le HTML brut
+                                    content = bodyHTML.substring(0, 3000);
+                                    console.log('🔥 Zimbra - Contenu HTML brut:', content.substring(0, 300));
+                                }
+                            } else {
+                                content = `[Contenu Zimbra détecté] - URL: ${window.location.href}`;
+                            }
+                        }
+                        
+                        // 🔥 EXTRACTION ULTRA-AGGRESSIVE DE L'EXPÉDITEUR
+                        const fromSelectors = [
+                            '.MsgHdrFrom',
+                            '.ZhCalListViewTable .From',
+                            '.ConvListItem .From',
+                            '[id*="from"]',
+                            '.from',
+                            '.sender',
+                            '.MsgHdrName',
+                            '[aria-label*="From"]',
+                            '[title*="From"]',
+                            '.ZmMailMsgView .From',
+                            '.MsgHeaderTable .From',
+                            '.MsgHdr .From'
+                        ];
+                        
+                        // Essayer tous les sélecteurs d'expéditeur
+                        for (const selector of fromSelectors) {
+                            const elements = document.querySelectorAll(selector);
+                            for (const element of elements) {
+                                if (element) {
+                                    const textContent = element.textContent?.trim() || '';
+                                    const emailMatch = textContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+                                    if (emailMatch) {
+                                        from = emailMatch[0];
+                                        console.log('🔥 Zimbra - Email extrait:', selector, from);
+                                        break;
+                                    } else if (textContent.includes('@')) {
+                                        from = textContent;
+                                        console.log('🔥 Zimbra - Contenu avec @ trouvé:', selector, from);
+                                        break;
+                                    }
+                                }
+                            }
+                            if (from) break;
+                        }
+                        
+                        // Fallback: chercher un email dans tout le contenu
+                        if (!from) {
+                            const emailInContent = allPageContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+                            if (emailInContent) {
+                                from = emailInContent[0];
+                                console.log('🔥 Zimbra - Email trouvé dans le contenu global:', from);
+                            }
+                        }
+                        
+                        // Fallback final pour l'expéditeur
+                        if (!from) {
+                            from = 'expediteur.zimbra@unknown.com';
+                        }
+                        
+                        // Fallback final pour le sujet si toujours vide
+                        if (!subject) {
+                            subject = 'Email Zimbra à analyser';
+                        }
+                        
+                        console.log('🔥 Zimbra - Résultat extraction ULTRA-AGRESSIVE:', { 
+                            subject: subject.substring(0, 100), 
+                            content: content.substring(0, 200), 
+                            from,
+                            contentLength: content.length,
+                            pageContentLength: allPageContent.length
+                        });
+                        
+                        return { 
+                            subject: subject || 'Email Zimbra', 
+                            content: content || allPageContent.substring(0, 2000), // Fallback sur tout le contenu
+                            from: from || 'zimbra@uphf.fr', 
+                            provider: 'zimbra',
+                            extractionType: 'ultra-aggressive-forced',
+                            warning: 'Extraction ultra-agressive de tout le contenu disponible'
+                        };
+                    }
+                });
+            } else {
+                throw new Error(`Provider ${provider} non supporté`);
+            }
+            
+            const emailData = results[0].result;
+            console.log('🔥 Données email extraites (ULTRA-FORCÉ):', emailData);
+            
+            // TOUJOURS retourner quelque chose
+            if (!emailData) {
+                console.log('🔥 FALLBACK FINAL - créer des données minimales');
+                return {
+                    subject: 'Email à analyser (extraction forcée)',
+                    content: 'Contenu email extrait de force pour analyse de sécurité',
+                    from: 'expediteur@forceextraction.com',
+                    provider: 'forced-fallback',
+                    extractionType: 'forced-minimal'
+                };
+            }
+            
+            return emailData;
+            
+        } catch (error) {
+            console.error('🔥 Erreur lors de l\'extraction ULTRA-FORCÉE:', error);
+            // TOUJOURS retourner quelque chose pour permettre l'analyse
+            return {
+                subject: 'Email en cours d\'analyse (récupération d\'erreur)',
+                content: `Analyse de sécurité en cours... Erreur: ${error.message}`,
+                from: 'expediteur@recovery.com',
+                provider: 'error-recovery',
+                extractionType: 'error-recovery-forced',
+                warning: `Extraction en mode de récupération forcée: ${error.message}`
+            };
+        }
+    }
+
+    async callEmailAnalysisAPI(emailData) {
+        try {
+            console.log('Appel API /chat/mail avec:', emailData);
+            
+            // NOUVEAU : Traitement spécial pour Zimbra avec extraction complète
+            if (emailData.extractionType === 'full-text-view') {
+                console.log('Utilisation des données complètes Zimbra pour analyse phishing');
+                
+                // Pour Zimbra vue texte complète, envoyer TOUT le contenu (headers + corps)
+                const emailContent = emailData.content; // Contenu complet avec headers
+                
+                // S'assurer que le sender est correct (Return-Path ou From)
+                let senderEmail = emailData.from || 'Expéditeur inconnu';
+                
+                // Si c'est déjà une adresse email valide, la garder
+                if (senderEmail.includes('@')) {
+                    // Nettoyer si nécessaire
+                    const emailMatch = senderEmail.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+                    if (emailMatch) {
+                        senderEmail = emailMatch[0];
+                    }
+                } else {
+                    senderEmail = 'unknown@sender.com';
+                }
+                
+                console.log('Sender email final (Zimbra complet):', senderEmail);
+                console.log('Contenu email (premiers 500 chars):', emailContent.substring(0, 500));
+                
+                // Envoyer les données complètes
+                const result = await this.makeAPIRequest('/chat/mail', {
+                    sender: senderEmail,
+                    body: emailContent // Headers complets + contenu
+                });
+                
+                return result;
+            }
+            
+            // EXISTANT : Pour les autres providers ou extraction limitée
+            // Préparer uniquement le contenu du mail pour le body
+            const emailContent = `${emailData.subject}\n\n${emailData.content}`.substring(0, 8000);
+            
+            // S'assurer que le sender est une adresse email valide
+            let senderEmail = emailData.from || 'Expéditeur inconnu';
+            
+            // Extraire l'email si c'est un format "Nom <email@domain.com>"
+            const emailMatch = senderEmail.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+            if (emailMatch) {
+                senderEmail = emailMatch[0];
+            } else if (!senderEmail.includes('@')) {
+                senderEmail = 'unknown@sender.com';
+            }
+            
+            console.log('Sender email final (standard):', senderEmail);
+            
+            // Utiliser le format correct pour l'API /chat/mail selon la documentation
+            const result = await this.makeAPIRequest('/chat/mail', {
+                sender: senderEmail,
+                body: emailContent
+            });
+            
+            return result;
+        } catch (error) {
+            console.error('Erreur API /chat/mail:', error);
+            return {
+                error: `API non disponible: ${error.message}`,
+                response: null
+            };
+        }
+    }
+
+    showEmailResult(response, riskScore, url, provider = null, subject = null, title = null) {
+        // Créer ou mettre à jour la section des résultats
+        let resultSection = document.getElementById('analysis-result');
+        if (!resultSection) {
+            resultSection = document.createElement('div');
+            resultSection.id = 'analysis-result';
+            resultSection.className = 'analysis-result';
+            
+            // Insérer après la section principale
+            const mainContent = this.mainContent;
+            if (mainContent) {
+                mainContent.appendChild(resultSection);
+                mainContent.classList.add('with-analysis');
+            }
+        }
+        
+        // Agrandir la popup
+        this.expandPopupSafely();
+        
+        // Déterminer la couleur et le statut selon le score de risque
+        let riskColor = '#4ade80'; // Vert par défaut
+        let riskStatus = 'Email sûr';
+        let riskIcon = '✅';
+        
+        if (riskScore !== null) {
+            const score = parseInt(riskScore);
+            if (score >= 70) {
+                riskColor = '#ef4444';
+                riskStatus = 'Risque élevé - Phishing probable';
+                riskIcon = '🚨';
+            } else if (score >= 40) {
+                riskColor = '#f59e0b';
+                riskStatus = 'Risque modéré - Prudence requise';
+                riskIcon = '⚠️';
+            } else if (score >= 20) {
+                riskColor = '#fbbf24';
+                riskStatus = 'Risque faible - Vérifiez les détails';
+                riskIcon = '⚡';
+            }
+        }
+        
+        // Extraire le provider et sujet pour l'affichage
+        let displayInfo = 'Email analysé';
+        if (provider && subject) {
+            displayInfo = `${provider.toUpperCase()} - ${subject.substring(0, 50)}${subject.length > 50 ? '...' : ''}`;
+        } else if (provider) {
+            displayInfo = `${provider.toUpperCase()} - Email`;
+        }
+        
+        resultSection.innerHTML = `
+            <div class="analysis-header">
+                <div class="analysis-domain">
+                    <h3>📧 Analyse email - Phishing</h3>
+                    <p class="domain-name">${displayInfo}</p>
+                </div>
+                <button class="close-analysis-btn" id="close-analysis">×</button>
+            </div>
+            
+            ${riskScore !== null ? `
+            <div class="analysis-score">
+                <div class="score-circle" style="border-color: ${riskColor};">
+                    <span class="score-number" style="color: ${riskColor};">${riskScore}</span>
+                    <span class="score-total">/100</span>
+                </div>
+                <div class="score-status" style="color: ${riskColor};">
+                    ${riskIcon} ${riskStatus}
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="analysis-content">
+                <h4>🛡️ Rapport d'analyse de sécurité</h4>
+                <div class="analysis-text">${this.formatAnalysisText(response)}</div>
+            </div>
+            
+            <div class="analysis-actions">
+                <button class="action-btn secondary" id="copy-analysis">
+                    📋 Copier le rapport
+                </button>
+                <button class="action-btn primary" id="new-email-analysis">
+                    🔄 Nouvelle analyse
+                </button>
+            </div>
+        `;
+        
+        resultSection.classList.remove('hidden');
+        resultSection.classList.add('visible');
+        
+        // Attacher les event listeners
+        const closeBtn = document.getElementById('close-analysis');
+        const copyBtn = document.getElementById('copy-analysis');
+        const newAnalysisBtn = document.getElementById('new-email-analysis');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideAnalysisResult());
+        }
+        
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(response).then(() => {
+                    copyBtn.textContent = '✅ Copié !';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '📋 Copier le rapport';
+                    }, 2000);
+                });
+            });
+        }
+        
+        if (newAnalysisBtn) {
+            newAnalysisBtn.addEventListener('click', () => {
+                this.hideAnalysisResult();
+                this.checkEmail();
+            });
         }
     }
 
@@ -1291,9 +2279,7 @@ ${htmlContent.substring(0, Math.min(htmlContent.length, maxContentLength - 100))
                 response: null
             };
         }
-    }
-
-    // Adapter les API Mock Functions pour le mode test
+    }    // Adapter les API Mock Functions pour le mode test
     async callVerificationAPI(data) {
         try {
             // Convertir l'ancien format vers le nouveau avec URL séparée et limitation de taille
@@ -1322,17 +2308,17 @@ Contenu HTML:
         }
     }
 
-    // Ancienne méthode de résumé pour compatibilité
+    // Adapter les API Mock Functions pour le mode test  
     async callSummaryAPI(data) {
         try {
-            // Convertir vers le nouveau format avec limitation de taille
+            // Convertir l'ancien format avec limitation de taille
             const prompt = `Résume cette page web:
 
 Titre: ${data.title}
 
 Contenu:
 `;
-            const maxContentLength = 10000 - prompt.length;
+            const maxContentLength = 8000 - prompt.length;
             const truncatedContent = data.content.substring(0, maxContentLength);
             
             const pageResumeData = {
@@ -1344,25 +2330,23 @@ Contenu:
         } catch (error) {
             return {
                 error: `API non disponible: ${error.message}`,
-                summary: null
+                response: null
             };
         }
     }
 
     // Méthode utilitaire pour forcer un nettoyage complet (debug)
-    async forceCompleteLogout() {
-        console.log('Forçage d\'un nettoyage complet...');
-        
+    async clearAllData() {
         // Nettoyer le storage
         await chrome.storage.local.clear();
         
         // Nettoyer les cookies
-        try {
+        try {    
             const cookies = await chrome.cookies.getAll({ domain: 'localhost' });
             for (const cookie of cookies) {
                 await chrome.cookies.remove({
                     url: `http${cookie.secure ? 's' : ''}://${cookie.domain}${cookie.path}`,
-                    name: cookie.name
+                    name: cookie.name    
                 });
             }
         } catch (error) {
@@ -1375,9 +2359,7 @@ Contenu:
         this.setStatus("Nettoyage complet effectué", "ready");
         
         console.log('Nettoyage complet terminé');
-    }
-
-    // Méthode pour notifier les content scripts du changement d'état d'authentification
+    }    // Méthode pour notifier les content scripts du changement d'état d'authentification
     async notifyAuthStateChange(isLoggedIn) {
         try {
             console.log(`Notification du changement d'état d'authentification: ${isLoggedIn}`);

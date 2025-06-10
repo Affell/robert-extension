@@ -79,6 +79,36 @@
     font-weight: 500;
 }
 
+.robert-header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.robert-clear-btn {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #a1a1aa;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.robert-clear-btn:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
 .robert-close-btn {
     background: #2a2a2a;
     border: 1px solid #3a3a3a;

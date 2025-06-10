@@ -1,12 +1,13 @@
 // Extension Robert IA - Content Script
 if (typeof window.RobertExtension === 'undefined') {
     
-    class RobertExtension {
-        constructor() {
+    class RobertExtension {        constructor() {
             this.chatPopup = null;
             this.floatingLogo = null;
             this.isInitialized = false;
             this.isAuthenticated = false;
+            this.chatHistory = []; // Historique des messages
+            this.isRestoringHistory = false; // Flag pour éviter les animations pendant la restauration
             this.predefinedQuestions = [
                 "Comment créer un mot de passe sécurisé ?",
                 "Comment protéger mes données personnelles en ligne ?",
@@ -14,23 +15,64 @@ if (typeof window.RobertExtension === 'undefined') {
                 "Qu'est-ce que l'authentification à deux facteurs (2FA) ?"
             ];
             this.init();
-        }
-
-        init() {
+        }init() {
             if (this.isInitialized) return;
             
             this.setupMessageListener();
             this.setupStorageListener();
+            this.loadChatHistory(); // Charger l'historique au démarrage
             this.checkAuthAndUPHF();
             this.isInitialized = true;
-        }
-
-        setupStorageListener() {
+        }        setupStorageListener() {
             chrome.storage.onChanged.addListener((changes, areaName) => {
                 if (areaName === 'local' && (changes.authToken || changes.isLoggedIn)) {
                     this.checkAuthAndUPHF();
                 }
             });
+        }
+
+        // Charger l'historique des conversations depuis le stockage
+        async loadChatHistory() {
+            try {
+                const { chatHistory } = await chrome.storage.local.get(['chatHistory']);
+                this.chatHistory = chatHistory || [];
+                console.log('Historique de chat chargé:', this.chatHistory.length, 'messages');
+            } catch (error) {
+                console.error('Erreur lors du chargement de l\'historique:', error);
+                this.chatHistory = [];
+            }
+        }
+
+        // Sauvegarder l'historique des conversations
+        async saveChatHistory() {
+            try {
+                await chrome.storage.local.set({ chatHistory: this.chatHistory });
+                console.log('Historique de chat sauvegardé:', this.chatHistory.length, 'messages');
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde de l\'historique:', error);
+            }
+        }        // Ajouter un message à l'historique
+        addToHistory(text, sender) {
+            const message = {
+                text: text,
+                sender: sender,
+                timestamp: Date.now()
+            };
+            this.chatHistory.push(message);
+            
+            // Limiter l'historique à 100 messages pour éviter une surcharge
+            if (this.chatHistory.length > 100) {
+                this.chatHistory = this.chatHistory.slice(-100);
+            }
+            
+            this.saveChatHistory();
+        }
+
+        // Effacer l'historique des conversations
+        async clearChatHistory() {
+            this.chatHistory = [];
+            await this.saveChatHistory();
+            console.log('Historique de chat effacé');
         }
 
         async checkAuthAndUPHF() {
@@ -155,16 +197,13 @@ if (typeof window.RobertExtension === 'undefined') {
                 const chatLogo = this.chatPopup.querySelector('#robert-chat-logo');
                 if (chatLogo) {
                     chatLogo.src = chrome.runtime.getURL('icons/logo_robert.png');
-                }
-
-                // Event listeners
+                }                // Event listeners
                 this.chatPopup.querySelector('#robert-close-chat').addEventListener('click', () => this.closeChatWidget());
+                this.chatPopup.querySelector('#robert-clear-chat').addEventListener('click', () => this.clearChatAndHistory());
                 this.chatPopup.querySelector('#robert-send-btn').addEventListener('click', () => this.sendMessage());
                 this.chatPopup.querySelector('#robert-chat-input').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.sendMessage();
-                });
-
-                // Ajouter les questions prédéfinies
+                });// Ajouter les questions prédéfinies
                 const questionsContainer = this.chatPopup.querySelector('#robert-questions');
                 this.predefinedQuestions.forEach(question => {
                     const btn = document.createElement('button');
@@ -174,9 +213,76 @@ if (typeof window.RobertExtension === 'undefined') {
                     questionsContainer.appendChild(btn);
                 });
 
-                document.body.appendChild(this.chatPopup);
-            } catch (error) {
+                // Restaurer l'historique des conversations
+                this.restoreChatHistory();
+
+                document.body.appendChild(this.chatPopup);            } catch (error) {
                 console.error('Erreur lors de la création du chat:', error);
+            }
+        }        // Restaurer l'historique des conversations dans le chat
+        restoreChatHistory() {
+            if (!this.chatPopup || this.chatHistory.length === 0) return;
+
+            console.log('Restauration de l\'historique:', this.chatHistory.length, 'messages');
+
+            const welcome = this.chatPopup.querySelector('#robert-chat-welcome');
+            if (welcome && this.chatHistory.length > 0) {
+                welcome.classList.add('hidden');
+            }
+
+            // Marquer qu'on est en train de restaurer l'historique
+            this.isRestoringHistory = true;
+
+            // Afficher tous les messages de l'historique
+            this.chatHistory.forEach(message => {
+                this.addMessageToUI(message.text, message.sender);
+            });
+
+            // Fin de la restauration
+            this.isRestoringHistory = false;
+
+            // Scroller vers le bas pour afficher les derniers messages
+            setTimeout(() => {
+                const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    console.log('Chat scrollé vers le bas après restauration de l\'historique');
+                }
+            }, 100);
+        }
+
+        // Effacer le chat et l'historique
+        async clearChatAndHistory() {
+            if (!this.chatPopup) return;
+
+            // Demander confirmation
+            if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique de conversation ?')) {
+                // Effacer l'historique stocké
+                await this.clearChatHistory();
+                
+                // Effacer l'interface du chat
+                const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = `
+                        <div class="robert-chat-welcome" id="robert-chat-welcome">
+                            <h3>Bonjour ! 👋</h3>
+                            <p>Je suis Robert, votre assistant IA spécialisé en cybersécurité. Comment puis-je vous aider ?</p>
+                            <div class="robert-questions-container" id="robert-questions"></div>
+                        </div>
+                    `;
+                    
+                    // Remettre les questions prédéfinies
+                    const questionsContainer = this.chatPopup.querySelector('#robert-questions');
+                    this.predefinedQuestions.forEach(question => {
+                        const btn = document.createElement('button');
+                        btn.className = 'robert-question-btn';
+                        btn.textContent = question;
+                        btn.addEventListener('click', () => this.handleQuestion(question));
+                        questionsContainer.appendChild(btn);
+                    });
+                }
+                
+                console.log('Chat et historique effacés');
             }
         }
 
@@ -345,9 +451,15 @@ if (typeof window.RobertExtension === 'undefined') {
             if (typingIndicator) {
                 typingIndicator.remove();
             }
-        }
-
-        addMessage(text, sender) {
+        }        addMessage(text, sender) {
+            // Ajouter à l'historique
+            this.addToHistory(text, sender);
+            
+            // Ajouter à l'interface utilisateur
+            this.addMessageToUI(text, sender);
+        }        addMessageToUI(text, sender) {
+            if (!this.chatPopup) return;
+            
             const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
             
             const messageEl = document.createElement('div');
@@ -390,16 +502,20 @@ if (typeof window.RobertExtension === 'undefined') {
             }
             
             messagesContainer.appendChild(messageEl);
+            
+            // Toujours scroller vers le bas après ajout d'un message
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
-            // Animation d'apparition
-            messageEl.style.opacity = '0';
-            messageEl.style.transform = 'translateY(10px)';
-            setTimeout(() => {
-                messageEl.style.transition = 'all 0.3s ease';
-                messageEl.style.opacity = '1';
-                messageEl.style.transform = 'translateY(0)';
-            }, 50);
+            // Animation d'apparition seulement pour les nouveaux messages (pas pour la restauration)
+            if (!this.isRestoringHistory) {
+                messageEl.style.opacity = '0';
+                messageEl.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    messageEl.style.transition = 'all 0.3s ease';
+                    messageEl.style.opacity = '1';
+                    messageEl.style.transform = 'translateY(0)';
+                }, 50);
+            }
         }parseMarkdown(text) {
             console.log('🔍 Parsing markdown:', text.substring(0, 100) + '...');
             
@@ -647,9 +763,7 @@ if (typeof window.RobertExtension === 'undefined') {
                 this.chatPopup.remove();
                 this.chatPopup = null;
             }
-        }
-
-        handleAuthStateChanged(isLoggedIn) {
+        }        handleAuthStateChanged(isLoggedIn) {
             console.log('État d\'authentification changé:', isLoggedIn);
             
             this.isAuthenticated = isLoggedIn;
@@ -657,6 +771,9 @@ if (typeof window.RobertExtension === 'undefined') {
             if (!isLoggedIn) {
                 // L'utilisateur s'est déconnecté - fermer le chat mais garder le logo
                 this.closeChatWidget();
+            } else {
+                // L'utilisateur s'est reconnecté - recharger l'historique
+                this.loadChatHistory();
             }
             
             // Le logo reste affiché sur les sites UPHF dans tous les cas
