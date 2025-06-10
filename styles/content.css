@@ -1,0 +1,820 @@
+/* Styles pour les éléments injectés dans les pages web */
+.robert-extension-widget {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+    color: #ffffff !important;
+    z-index: 2147483647 !important;
+}
+
+.robert-extension-widget * {
+    box-sizing: border-box !important;
+}
+
+/* Logo flottant pour les sites UPHF */
+.robert-floating-logo {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 60px !important;
+    height: 60px !important;
+    background: #f97316 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+    cursor: pointer !important;
+    z-index: 2147483646 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+    animation: float 3s ease-in-out infinite !important;
+}
+
+.robert-floating-logo:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5) !important;
+}
+
+.robert-logo-img {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+
+.robert-logo-tooltip {
+    position: absolute !important;
+    bottom: 70px !important;
+    right: 0 !important;
+    background: #111111 !important;
+    color: #ffffff !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.3s ease !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    border: 1px solid #2a2a2a !important;
+}
+
+.robert-floating-logo:hover .robert-logo-tooltip {
+    opacity: 1 !important;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Chat Popup - Style moderne et isolation complète */
+.robert-chat-popup {
+    /* Isolation Shadow DOM */
+    all: initial !important;
+    
+    /* Positionnement et dimensions fixes */
+    position: fixed !important;
+    top: 50% !important;
+    right: 20px !important;
+    transform: translateY(-50%) !important;
+    width: 380px !important;
+    height: 600px !important;
+    
+    /* Apparence moderne - THEME SOMBRE */
+    background: #1a1a1a !important;
+    border: 1px solid #333333 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+    
+    /* Z-index et visibilité */
+    z-index: 2147483647 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    
+    /* Typography reset */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    color: #ffffff !important;
+    
+    /* Layout */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    
+    /* Animation */
+    animation: slideInFromRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Reset complet pour TOUS les enfants */
+.robert-chat-popup *,
+.robert-chat-popup *::before,
+.robert-chat-popup *::after {
+    all: initial !important;
+    box-sizing: border-box !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+/* Container principal */
+.robert-chat-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+/* Header du chat */
+.robert-chat-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 16px 20px !important;
+    background: #1a1a1a !important;
+    border-bottom: 1px solid #333333 !important;
+    border-radius: 20px 20px 0 0 !important;
+    height: 70px !important;
+    flex-shrink: 0 !important;
+}
+
+.robert-header-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex: 1 !important;
+}
+
+.robert-chat-logo {
+    display: block !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+
+.robert-header-text {
+    display: block !important;
+}
+
+.robert-header-text h1 {
+    display: block !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #f97316 !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.robert-header-text p {
+    display: block !important;
+    color: #a1a1aa !important;
+    font-size: 12px !important;
+    margin: 2px 0 0 0 !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+}
+
+.robert-close-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 8px !important;
+    color: #a1a1aa !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    transition: all 0.2s ease !important;
+}
+
+.robert-close-btn:hover {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* Contenu du chat */
+.robert-chat-content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    padding: 16px !important;
+    gap: 12px !important;
+    background: #1a1a1a !important;
+    overflow-y: auto !important;
+    height: calc(600px - 140px) !important;
+}
+
+.robert-chat-content::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.robert-chat-content::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.robert-chat-content::-webkit-scrollbar-thumb {
+    background: #3a3a3a !important;
+    border-radius: 2px !important;
+}
+
+/* Messages d'accueil */
+.robert-chat-welcome {
+    display: block !important;
+    padding: 20px !important;
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 12px !important;
+    text-align: center !important;
+}
+
+.robert-chat-welcome h3 {
+    display: block !important;
+    margin: 0 0 8px 0 !important;
+    color: #f97316 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+}
+
+.robert-chat-welcome p {
+    display: block !important;
+    margin: 0 0 16px 0 !important;
+    color: #d1d5db !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+/* Container des questions */
+.robert-questions-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+/* Boutons de questions */
+.robert-question-btn {
+    display: block !important;
+    width: 100% !important;
+    min-height: 40px !important;
+    padding: 12px 16px !important;
+    background: #f97316 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    line-height: 1.3 !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.robert-question-btn:hover {
+    background: #ea580c !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Messages */
+.robert-message {
+    display: block !important;
+    max-width: 80% !important;
+    padding: 12px 16px !important;
+    border-radius: 16px !important;
+    margin: 4px 0 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    animation: messageSlideIn 0.3s ease-out !important;
+}
+
+.robert-message-user {
+    background: #f97316 !important;
+    color: white !important;
+    align-self: flex-end !important;
+    margin-left: auto !important;
+    border-bottom-right-radius: 4px !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+.robert-message-assistant {
+    background: #2a2a2a !important;
+    color: #ffffff !important;
+    border: 1px solid #3a3a3a !important;
+    align-self: flex-start !important;
+    border-bottom-left-radius: 4px !important;
+    line-height: 1.6 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    padding: 16px 20px !important;
+    background: linear-gradient(135deg, #2a2a2a, #1f1f1f) !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 16px !important;
+    margin: 12px 0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    color: #e5e5e5 !important;
+    font-size: 14px !important;
+    max-width: 85% !important;
+}
+
+/* Reset pour tous les éléments dans les messages */
+.robert-message-assistant *,
+.robert-message-assistant *::before,
+.robert-message-assistant *::after {
+    pointer-events: auto !important;
+    max-width: 100% !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+/* Paragraphes - Style amélioré avec gestion des sauts de ligne */
+.robert-message-assistant .robert-markdown-p,
+.robert-message-assistant p {
+    margin: 0.8em 0 !important;
+    line-height: 1.7 !important;
+    color: #e5e5e5 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    text-align: left !important;
+    font-size: 14px !important;
+}
+
+/* Balises br pour les sauts de ligne */
+.robert-message-assistant br,
+.robert-message-user br {
+    display: block !important;
+    margin: 0.4em 0 !important;
+    content: "" !important;
+    line-height: 0 !important;
+}
+
+.robert-message-assistant .robert-markdown-p:first-child,
+.robert-message-assistant p:first-child {
+    margin-top: 0 !important;
+}
+
+.robert-message-assistant .robert-markdown-p:last-child,
+.robert-message-assistant p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Titres avec design moderne */
+.robert-message-assistant .robert-markdown-h1,
+.robert-message-assistant h1 {
+    color: #f97316 !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    margin: 1.2em 0 0.6em 0 !important;
+    border-bottom: 2px solid #f97316 !important;
+    padding-bottom: 0.3em !important;
+    line-height: 1.3 !important;
+}
+
+.robert-message-assistant .robert-markdown-h2,
+.robert-message-assistant h2 {
+    color: #fb923c !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    margin: 1em 0 0.5em 0 !important;
+    border-bottom: 1px solid #fb923c !important;
+    padding-bottom: 0.25em !important;
+    line-height: 1.3 !important;
+}
+
+.robert-message-assistant .robert-markdown-h3,
+.robert-message-assistant h3 {
+    color: #fdba74 !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin: 0.8em 0 0.4em 0 !important;
+    line-height: 1.3 !important;
+}
+
+.robert-message-assistant .robert-markdown-h4,
+.robert-message-assistant h4 {
+    color: #fed7aa !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    margin: 0.6em 0 0.3em 0 !important;
+    line-height: 1.3 !important;
+}
+
+/* Premiers titres sans marge haute */
+.robert-message-assistant .robert-markdown-h1:first-child,
+.robert-message-assistant .robert-markdown-h2:first-child,
+.robert-message-assistant .robert-markdown-h3:first-child,
+.robert-message-assistant .robert-markdown-h4:first-child,
+.robert-message-assistant h1:first-child,
+.robert-message-assistant h2:first-child,
+.robert-message-assistant h3:first-child,
+.robert-message-assistant h4:first-child {
+    margin-top: 0 !important;
+}
+
+/* Code blocks - Design moderne */
+.robert-message-assistant .robert-markdown-codeblock,
+.robert-message-assistant pre {
+    background: linear-gradient(135deg, #1a1a1a, #0f0f0f) !important;
+    border: 1px solid #333 !important;
+    border-left: 4px solid #f97316 !important;
+    border-radius: 8px !important;
+    padding: 1em !important;
+    margin: 1em 0 !important;
+    font-family: 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, Monaco, 'Andale Mono', monospace !important;
+    font-size: 0.85rem !important;
+    line-height: 1.5 !important;
+    color: #e5e5e5 !important;
+    overflow-x: auto !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.robert-message-assistant .robert-markdown-codeblock code,
+.robert-message-assistant pre code {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: inherit !important;
+    color: inherit !important;
+}
+
+/* Code inline */
+.robert-message-assistant .robert-markdown-code,
+.robert-message-assistant code {
+    background: linear-gradient(135deg, #2a2a2a, #1f1f1f) !important;
+    border: 1px solid #444 !important;
+    border-radius: 4px !important;
+    padding: 0.2em 0.4em !important;
+    font-family: 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, Monaco, monospace !important;
+    font-size: 0.85em !important;
+    color: #fbbf24 !important;
+    margin: 0 0.1em !important;
+    word-break: break-word !important;
+}
+
+/* Listes avec meilleur espacement et puces visibles */
+.robert-message-assistant .robert-markdown-ul,
+.robert-message-assistant .robert-markdown-ol,
+.robert-message-assistant ul,
+.robert-message-assistant ol {
+    margin: 1em 0 !important;
+    padding-left: 2em !important;
+    line-height: 1.6 !important;
+    list-style-position: outside !important;
+}
+
+.robert-message-assistant .robert-markdown-li,
+.robert-message-assistant .robert-markdown-oli,
+.robert-message-assistant li {
+    margin: 0.5em 0 !important;
+    line-height: 1.6 !important;
+    color: #e5e5e5 !important;
+    list-style-position: outside !important;
+    padding-left: 0.5em !important;
+    display: list-item !important;
+}
+
+.robert-message-assistant .robert-markdown-ul .robert-markdown-li,
+.robert-message-assistant ul li {
+    list-style-type: disc !important;
+    list-style-position: outside !important;
+}
+
+.robert-message-assistant .robert-markdown-ol .robert-markdown-oli,
+.robert-message-assistant ol li {
+    list-style-type: decimal !important;
+    list-style-position: outside !important;
+}
+
+/* S'assurer que les puces sont visibles même avec du contenu gras/italique */
+.robert-message-assistant .robert-markdown-li strong,
+.robert-message-assistant .robert-markdown-oli strong,
+.robert-message-assistant li strong {
+    color: #ffffff !important;
+}
+
+.robert-message-assistant .robert-markdown-li em,
+.robert-message-assistant .robert-markdown-oli em,
+.robert-message-assistant li em {
+    color: #fed7aa !important;
+}
+
+/* Citations avec style élégant */
+.robert-message-assistant .robert-markdown-quote,
+.robert-message-assistant blockquote {
+    background: linear-gradient(135deg, #2a2a2a, #1f1f1f) !important;
+    border-left: 4px solid #f97316 !important;
+    border-radius: 0 8px 8px 0 !important;
+    padding: 1em 1.5em !important;
+    margin: 1em 0 !important;
+    font-style: italic !important;
+    color: #d1d5db !important;
+    position: relative !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.robert-message-assistant .robert-markdown-quote::before,
+.robert-message-assistant blockquote::before {
+    content: '"' !important;
+    font-size: 3em !important;
+    color: #f97316 !important;
+    position: absolute !important;
+    top: -0.2em !important;
+    left: 0.3em !important;
+    line-height: 1 !important;
+    opacity: 0.5 !important;
+}
+
+/* Formatage de texte amélioré */
+.robert-message-assistant strong {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.robert-message-assistant em {
+    color: #f0f0f0 !important;
+    font-style: italic !important;
+    font-family: Georgia, "Times New Roman", serif !important;
+}
+
+.robert-message-assistant strong em,
+.robert-message-assistant em strong {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-style: italic !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Boutons de liens - AMÉLIORATION UI SEULEMENT */
+.robert-message-assistant .robert-link-btn {
+    background: linear-gradient(135deg, #f97316, #ea580c) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    margin: 2px 4px 2px 0 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2) !important;
+    
+    /* LIMITE ET TRONCATURE */
+    pointer-events: auto !important;
+    user-select: none !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    white-space: nowrap !important;
+    max-width: 180px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    outline: none !important;
+    height: 32px !important;
+    line-height: 1 !important;
+}
+
+.robert-message-assistant .robert-link-btn:hover {
+    background: linear-gradient(135deg, #ea580c, #dc2626) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(249, 115, 22, 0.4) !important;
+}
+
+.robert-message-assistant .robert-link-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 3px 6px rgba(249, 115, 22, 0.3) !important;
+}
+
+.robert-message-assistant .robert-url-btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    margin: 2px 4px 2px 0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+    vertical-align: top !important;
+    text-align: center !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
+    
+    /* LIMITE ET TRONCATURE */
+    pointer-events: auto !important;
+    user-select: none !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    white-space: nowrap !important;
+    max-width: 200px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    outline: none !important;
+    height: 28px !important;
+    line-height: 16px !important;
+}
+
+.robert-message-assistant .robert-url-btn:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+.robert-message-assistant .robert-url-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Garantir que les boutons restent visibles et cliquables */
+.robert-message-assistant button {
+    vertical-align: baseline !important;
+    line-height: 1 !important;
+    min-height: 32px !important;
+}
+
+/* Sauts de ligne améliorés - RÉDUITS */
+.robert-message-assistant br {
+    line-height: 1.2 !important;
+    margin: 0.1em 0 !important;
+}
+
+/* Espacement global amélioré - RÉDUIT */
+.robert-message-assistant > *:not(:first-child) {
+    margin-top: 0.3em !important;
+}
+
+.robert-message-assistant > *:not(:last-child) {
+    margin-bottom: 0.3em !important;
+}
+
+/* Correction pour les éléments de premier et dernier niveau */
+.robert-message-assistant > *:first-child {
+    margin-top: 0 !important;
+}
+
+.robert-message-assistant > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Zone de saisie du chat */
+.robert-chat-input-area {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 16px 20px !important;
+    background: #1a1a1a !important;
+    border-top: 1px solid #333333 !important;
+    border-radius: 0 0 20px 20px !important;
+    height: 70px !important;
+    flex-shrink: 0 !important;
+}
+
+.robert-chat-input {
+    flex: 1 !important;
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    outline: none !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.robert-chat-input:focus {
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
+}
+
+.robert-chat-input::placeholder {
+    color: #6b7280 !important;
+}
+
+.robert-send-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 44px !important;
+    height: 44px !important;
+    background: #f97316 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    color: white !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.robert-send-btn:hover {
+    background: #ea580c !important;
+    transform: scale(1.05) !important;
+}
+
+.robert-send-btn:active {
+    transform: scale(0.95) !important;
+}
+
+/* CORRECTION BOUTONS - Plus compacts et texte aligné */
+.robert-message-assistant button {
+    padding: 0.4em 0.8em !important;
+    font-size: 0.9em !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4em !important;
+    transition: background 0.2s ease, transform 0.2s ease !important;
+}
+
+.robert-message-assistant button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-1px) !important;
+}
+
+.robert-message-assistant button:active {
+    transform: translateY(0) !important;
+}
+
+/* Responsive pour les petits écrans */
+@media (max-width: 480px) {
+    .robert-chat-popup,
+    .robert-login-portal {
+        left: 10px !important;
+        right: 10px !important;
+        top: 10px !important;
+        bottom: 10px !important;
+        width: calc(100vw - 20px) !important;
+        height: calc(100vh - 20px) !important;
+        transform: none !important;
+        border-radius: 20px !important;
+    }
+}
+
+@media (max-height: 700px) {
+    .robert-chat-popup {
+        height: calc(100vh - 40px) !important;
+        top: 20px !important;
+        transform: translateY(0) !important;
+    }
+    
+    .robert-login-portal {
+        height: calc(100vh - 40px) !important;
+        top: 20px !important;
+        transform: translateY(0) !important;
+    }
+}
+
+/* Indicateur de typing - s'assurer que le texte est blanc */
+.robert-typing span,
+.robert-typing * {
+    color: #ffffff !important;
+}
+
+.robert-message-assistant.robert-typing {
+    color: #ffffff !important;
+}
+
+/* Animation pour l'indicateur de typing */
+@keyframes typing-pulse {
+    0%, 60%, 100% { 
+        opacity: 0.3 !important; 
+        transform: scale(0.8) !important; 
+    }
+    30% { 
+        opacity: 1 !important; 
+        transform: scale(1) !important; 
+    }
+}
+
+/* Protection contre le débordement des boutons */
+.robert-message-assistant {
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+}
+
+/* S'assurer que les boutons s'adaptent au conteneur */
+.robert-message-assistant .robert-link-btn,
+.robert-message-assistant .robert-url-btn {
+    /* Calculer la largeur en fonction du conteneur parent */
+    max-width: min(calc(100% - 40px), 250px) !important;
+    flex-shrink: 1 !important;
+}

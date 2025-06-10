@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Extension Robert IA",
+  "version": "1.0",
+  "description": "Extension pour discuter avec l'IA Robert depuis n'importe quelle page",
+  "permissions": ["tabs", "activeTab", "storage", "scripting", "cookies", "identity"],
+  "host_permissions": [
+    "http://*.uphf.fr/*",
+    "https://*.uphf.fr/*",
+    "http://localhost:5000/*",
+    "http://localhost/*",
+    "https://localhost/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "templates/popup.html",
+    "default_icon": {
+      "16": "icons/logo_robert.png",
+      "48": "icons/logo_robert.png",
+      "128": "icons/logo_robert.png"
+    }
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["scripts/content.js"],
+      "css": ["styles/content.css"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Ouvrir la popup Robert IA"
+    }
+  },  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/logo_robert.png",
+        "styles/popup.css",
+        "styles/chat-popup.css",
+        "scripts/content.js",
+        "scripts/chat-popup.js",
+        "templates/chat-widget.html",
+        "templates/chat-popup.html",
+        "templates/floating-logo.html"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
