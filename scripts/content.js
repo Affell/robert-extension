@@ -87,9 +87,19 @@ if (typeof window.RobertExtension === 'undefined') {
                     logoImg.src = chrome.runtime.getURL('icons/logo_robert.png');
                 }
 
+<<<<<<< HEAD
                 // Toujours ouvrir l'extension popup, peu importe l'état d'authentification
                 this.floatingLogo.addEventListener('click', () => {
                     this.openExtensionPopup();
+=======
+                // Adapter le comportement selon l'état d'authentification
+                this.floatingLogo.addEventListener('click', () => {
+                    if (this.isAuthenticated) {
+                        this.openChatWidget();
+                    } else {
+                        this.openExtensionPopup();
+                    }
+>>>>>>> 3594c7778918dbf27844fe1324c7cc60843c701f
                 });
                 
                 document.body.appendChild(this.floatingLogo);
@@ -310,6 +320,7 @@ if (typeof window.RobertExtension === 'undefined') {
             
             const message = errorMessages[error.message] || `❌ Erreur: ${error.message}`;
             this.addMessage(message, 'assistant');
+<<<<<<< HEAD
         }        addTypingIndicator() {
             const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
             
@@ -335,6 +346,17 @@ if (typeof window.RobertExtension === 'undefined') {
                 `;
                 document.head.appendChild(style);
             }
+=======
+        }
+
+        addTypingIndicator() {
+            const messagesContainer = this.chatPopup.querySelector('#robert-chat-messages');
+            
+            const typingEl = document.createElement('div');
+            typingEl.className = 'robert-message robert-message-assistant robert-typing';
+            typingEl.id = 'robert-typing-indicator';
+            typingEl.innerHTML = '⚡ Robert réfléchit...';
+>>>>>>> 3594c7778918dbf27844fe1324c7cc60843c701f
             
             messagesContainer.appendChild(typingEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -355,6 +377,7 @@ if (typeof window.RobertExtension === 'undefined') {
             
             if (sender === 'assistant') {
                 // Parser le markdown pour les réponses de l'assistant
+<<<<<<< HEAD
                 console.log('🎨 Rendu du markdown pour le message assistant');
                 const parsedHtml = this.parseMarkdown(text);
                 console.log('📝 HTML généré:', parsedHtml.substring(0, 300) + '...');
@@ -387,10 +410,16 @@ if (typeof window.RobertExtension === 'undefined') {
                     .replace(/  /g, '&nbsp;&nbsp;'); // Préserver les espaces multiples
                 
                 messageEl.innerHTML = htmlText;
+=======
+                messageEl.innerHTML = this.parseMarkdown(text);
+            } else {
+                messageEl.textContent = text;
+>>>>>>> 3594c7778918dbf27844fe1324c7cc60843c701f
             }
             
             messagesContainer.appendChild(messageEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+<<<<<<< HEAD
             
             // Animation d'apparition
             messageEl.style.opacity = '0';
@@ -641,6 +670,49 @@ if (typeof window.RobertExtension === 'undefined') {
             
             console.log('✅ Markdown parsé (final):', html.substring(0, 200) + '...');
             return html.trim();
+=======
+        }
+
+        parseMarkdown(text) {
+            // Convertir les sauts de ligne
+            let html = text.replace(/\n/g, '<br>');
+            
+            // Gras (**texte** ou __texte__)
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            
+            // Italique (*texte* ou _texte_)
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+            
+            // Code inline (`code`)
+            html = html.replace(/`(.*?)`/g, '<code class="robert-markdown-code">$1</code>');
+            
+            // Listes non ordonnées (- item ou * item)
+            html = html.replace(/^[-*]\s(.+)/gm, '<li class="robert-markdown-li">$1</li>');
+            
+            // Titres (# Titre)
+            html = html.replace(/^### (.*)/gm, '<h3 class="robert-markdown-h3">$1</h3>');
+            html = html.replace(/^## (.*)/gm, '<h2 class="robert-markdown-h2">$1</h2>');
+            html = html.replace(/^# (.*)/gm, '<h1 class="robert-markdown-h1">$1</h1>');
+            
+            // Liens [texte](url) - convertis en boutons
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+                return `<button onclick="window.open('${url}', '_blank')" class="robert-link-btn">
+                    🔗 ${text}
+                </button>`;
+            });
+            
+            // URLs simples (http/https) - convertis en boutons
+            html = html.replace(/(https?:\/\/[^\s<>"]+)/gi, (url) => {
+                const displayText = url.length > 30 ? url.substring(0, 30) + '...' : url;
+                return `<button onclick="window.open('${url}', '_blank')" class="robert-url-btn">
+                    🌐 ${displayText}
+                </button>`;
+            });
+            
+            return html;
+>>>>>>> 3594c7778918dbf27844fe1324c7cc60843c701f
         }
 
         closeChatWidget() {

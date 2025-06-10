@@ -212,6 +212,7 @@ window.ChatPopup = class ChatPopup {
         messagesContainer.appendChild(messageElement);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }    parseMarkdown(text) {
+<<<<<<< HEAD
         console.log('🔍 Parsing markdown (popup):', text.substring(0, 100) + '...');
         
         // Nettoyer le texte d'entrée
@@ -315,6 +316,25 @@ window.ChatPopup = class ChatPopup {
         html = html.replace(/[A-Z]+LINK[A-Z]*URL[^A-Z]*TEXT[^A-Z]*ICON[^A-Z]*END[^A-Z]*/gi, '');
         html = html.replace(/\$\d+/g, '');
         html = html.replace(/<p class="markdown-p">\s*<\/p>/g, '');
+=======
+        let html = text.replace(/\n/g, '<br>');
+        
+        // Formatage de texte
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        html = html.replace(/`(.*?)`/g, '<code class="markdown-code">$1</code>');
+        
+        // Listes et titres
+        html = html.replace(/^[-*]\s(.+)/gm, '<li class="markdown-li">$1</li>');
+        html = html.replace(/^### (.*)/gm, '<h3 class="markdown-h3">$1</h3>');
+        html = html.replace(/^## (.*)/gm, '<h2 class="markdown-h2">$1</h2>');
+        html = html.replace(/^# (.*)/gm, '<h1 class="markdown-h1">$1</h1>');
+        
+        // Boutons pour liens
+        html = this.convertLinksToButtons(html);
+>>>>>>> 3594c7778918dbf27844fe1324c7cc60843c701f
         
         return html;
     }    convertLinksToButtons(html) {
