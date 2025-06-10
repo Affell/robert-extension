@@ -536,8 +536,7 @@ if (typeof window.RobertExtension === 'undefined') {
             if (inUnorderedList) {
                 lines[lines.length - 1] += '</ul>';
             }
-            
-            html = lines.join('\n');
+              html = lines.join('');
             
             // 6. FORMATAGE DE TEXTE AMÉLIORÉ - APRÈS les listes
             // D'abord échapper les caractères HTML (sauf ceux déjà protégés)
@@ -585,8 +584,7 @@ if (typeof window.RobertExtension === 'undefined') {
                 
                 // C'est du texte simple, convertir les sauts de ligne en <br>
                 html = html.replace(/\n+/g, '<br>');
-                html = html.replace(/(<br>\s*){3,}/g, '<br><br>');
-            } else {
+                html = html.replace(/(<br>\s*){3,}/g, '<br><br>');            } else {
                 // C'est du HTML structuré, nettoyer seulement les sauts de ligne inutiles
                 
                 // Supprimer les sauts de ligne autour des éléments de liste
@@ -597,12 +595,16 @@ if (typeof window.RobertExtension === 'undefined') {
                 html = html.replace(/(<ul[^>]*>)\n+/g, '$1');
                 html = html.replace(/(<ol[^>]*>)\n+/g, '$1');
                 
+                // Supprimer les sauts de ligne entre les éléments de listes adjacents
+                html = html.replace(/(<\/li>)\s*(<li)/g, '$1$2');
+                html = html.replace(/(<\/ol>)\s*(<ul)/g, '$1 $2');
+                html = html.replace(/(<\/ul>)\s*(<ol)/g, '$1 $2');
+                
                 // Supprimer les sauts de ligne autour des titres
                 html = html.replace(/\n+(<h[1-6][^>]*>)/g, '\n$1');
                 html = html.replace(/(<\/h[1-6]>)\n+/g, '$1\n');
-                
-                // Traiter les paragraphes de texte normal entre les éléments structurés
-                const lines = html.split('\n');
+                  // Traiter les paragraphes de texte normal entre les éléments structurés
+                const lines = html.split(/(?<=<\/(?:ul|ol|li|h[1-6]|blockquote|pre)>)|(?=<(?:ul|ol|li|h[1-6]|blockquote|pre))/);
                 const processedLines = [];
                 
                 for (let i = 0; i < lines.length; i++) {
@@ -617,27 +619,24 @@ if (typeof window.RobertExtension === 'undefined') {
                     }
                     // Si c'est du texte normal, le traiter
                     else {
-                        // Vérifier s'il y a du texte avant/après pour déterminer l'espacement
-                        const needsBr = i < lines.length - 1 && lines[i + 1].trim() && 
-                                       !lines[i + 1].trim().match(/^<(h[1-6]|ul|ol|li|blockquote|pre|div|button)/);
-                        
-                        if (needsBr) {
-                            processedLines.push(line + '<br>');
-                        } else {
-                            processedLines.push(line);
-                        }
+                        // Ajouter un petit espacement uniquement si nécessaire
+                        processedLines.push(line);
                     }
                 }
                 
-                html = processedLines.join('\n');
+                html = processedLines.join('');
             }
-            
-            // 10. NETTOYAGE FINAL AMÉLIORÉ
+              // 10. NETTOYAGE FINAL AMÉLIORÉ
             // Supprimer les sauts de ligne excessifs
             html = html.replace(/\n\s*\n\s*\n/g, '\n\n'); // Max 2 sauts de ligne consécutifs
             html = html.replace(/<br>\s*<br>\s*<br>/g, '<br><br>'); // Max 2 br consécutifs
             html = html.replace(/^\s*<br>|<br>\s*$/g, ''); // Supprimer les br en début/fin
             html = html.replace(/\n\s*$/g, ''); // Supprimer les espaces/sauts en fin
+            
+            // Nettoyer les espaces autour des listes
+            html = html.replace(/(<\/ul>)\s*(<ul)/g, '$1$2');
+            html = html.replace(/(<\/ol>)\s*(<ol)/g, '$1$2');
+            html = html.replace(/(<\/li>)\s*(<li)/g, '$1$2');
             
             console.log('✅ Markdown parsé (final):', html.substring(0, 200) + '...');
             return html.trim();

@@ -467,17 +467,17 @@
 .robert-message-assistant .robert-markdown-ol,
 .robert-message-assistant ul,
 .robert-message-assistant ol {
-    margin: 1em 0 !important;
+    margin: 0.5em 0 !important;
     padding-left: 2em !important;
-    line-height: 1.6 !important;
+    line-height: 1.5 !important;
     list-style-position: outside !important;
 }
 
 .robert-message-assistant .robert-markdown-li,
 .robert-message-assistant .robert-markdown-oli,
 .robert-message-assistant li {
-    margin: 0.5em 0 !important;
-    line-height: 1.6 !important;
+    margin: 0.2em 0 !important;
+    line-height: 1.5 !important;
     color: #e5e5e5 !important;
     list-style-position: outside !important;
     padding-left: 0.5em !important;
@@ -562,8 +562,8 @@
     color: white !important;
     border: none !important;
     border-radius: 6px !important;
-    padding: 8px 12px !important;
-    margin: 2px 4px 2px 0 !important;
+    padding: 6px 12px !important;
+    margin: 3px 6px 3px 0 !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
@@ -585,7 +585,7 @@
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     outline: none !important;
-    height: 32px !important;
+    height: 28px !important;
     line-height: 1 !important;
 }
 
@@ -606,8 +606,8 @@
     border: none !important;
     border-radius: 6px !important;
     padding: 6px 12px !important;
-    margin: 2px 4px 2px 0 !important;
-    font-size: 13px !important;
+    margin: 3px 6px 3px 0 !important;
+    font-size: 12px !important;
     font-weight: 500 !important;
     cursor: pointer !important;
     display: inline-block !important;
