@@ -517,43 +517,43 @@ if (typeof window.RobertExtension === 'undefined') {
                 }, 50);
             }
         }parseMarkdown(text) {
-            console.log('🔍 Parsing markdown:', text.substring(0, 100) + '...');
-            
-            // Nettoyer le texte d'entrée
-            let html = text.trim();
-            
-            // 1. PROTECTION DES BLOCS DE CODE AVANT TOUT TRAITEMENT
-            const codeBlocks = [];
-            const inlineCode = [];
-            
-            // Protéger les blocs de code avec langage ```lang
-            html = html.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
-                codeBlocks.push({
-                    code: code.trim(),
-                    language: lang || 'text'
-                });
-                return `__CODEBLOCK_${codeBlocks.length - 1}__`;
-            });
-            
-            // Protéger le code inline `
-            html = html.replace(/`([^`\n]+)`/g, (match, code) => {
-                inlineCode.push(code);
-                return `__INLINECODE_${inlineCode.length - 1}__`;
-            });
-            
-            // 2. TRAITEMENT DES LIENS MARKDOWN - REGEX AMÉLIORÉE
-            html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/gi, (match, linkText, url) => {
-                console.log('🔗 Lien markdown trouvé:', linkText, '->', url);
-                
-                const cleanUrl = url.trim().replace(/[.,;!?]+$/, '');
-                const cleanText = linkText.trim();
-                
-                // Déterminer l'icône
-                let icon = '🌐';
-                if (url.includes('github.com')) icon = '📚';
-                else if (url.includes('doc') || cleanText.toLowerCase().includes('doc')) icon = '📖';
-                else if (url.includes('youtube.com') || url.includes('youtu.be')) icon = '🎥';
-                else if (url.includes('wikipedia')) icon = '📚';
+    console.log('🔍 Parsing markdown:', text.substring(0, 100) + '...');
+    
+    // Nettoyer le texte d'entrée
+    let html = text.trim();
+    
+    // 1. PROTECTION DES BLOCS DE CODE AVANT TOUT TRAITEMENT
+    const codeBlocks = [];
+    const inlineCode = [];
+    
+    // Protéger les blocs de code avec langage ```lang
+    html = html.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+        codeBlocks.push({
+            code: code.trim(),
+            language: lang || 'text'
+        });
+        return `__CODEBLOCK_${codeBlocks.length - 1}__`;
+    });
+    
+    // Protéger le code inline `
+    html = html.replace(/`([^`\n]+)`/g, (match, code) => {
+        inlineCode.push(code);
+        return `__INLINECODE_${inlineCode.length - 1}__`;
+    });
+    
+    // 2. TRAITEMENT DES LIENS MARKDOWN - REGEX AMÉLIORÉE
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/gi, (match, linkText, url) => {
+        console.log('🔗 Lien markdown trouvé:', linkText, '->', url);
+        
+        const cleanUrl = url.trim().replace(/[.,;!?]+$/, '');
+        const cleanText = linkText.trim();
+        
+        // Déterminer l'icône
+        let icon = '🌐';
+        if (url.includes('github.com')) icon = '📚';
+        else if (url.includes('doc') || cleanText.toLowerCase().includes('doc')) icon = '📖';
+        else if (url.includes('youtube.com') || url.includes('youtu.be')) icon = '🎥';
+        else if (url.includes('wikipedia')) icon = '📚';
                   // Créer le bouton avec événement sécurisé
                 const safeUrl = cleanUrl.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
                 const safeText = cleanText.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
@@ -602,57 +602,77 @@ if (typeof window.RobertExtension === 'undefined') {
             html = html.replace(/^##\s+(.+)$/gm, '<h2 class="robert-markdown-h2">$1</h2>');
             html = html.replace(/^#\s+(.+)$/gm, '<h1 class="robert-markdown-h1">$1</h1>');
             
-            // 5. LISTES (traiter avant le formatage de texte pour éviter les conflits)
+            // 5. LISTES IMBRIQUÉES (traiter avant le formatage de texte pour éviter les conflits)
             const lines = html.split('\n');
-            let inOrderedList = false;
-            let inUnorderedList = false;
+            const processedLines = [];
+            const listStack = []; // Stack pour gérer les niveaux d'imbrication
             
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
+                const line = lines[i];
+                const trimmedLine = line.trim();
                 
-                // Liste ordonnée (améliorer la détection)
-                if (/^\d+\.\s+/.test(line)) {
-                    const content = line.replace(/^\d+\.\s+/, '');
-                    if (!inOrderedList) {
-                        lines[i] = `<ol class="robert-markdown-ol"><li class="robert-markdown-oli">${content}</li>`;
-                        inOrderedList = true;
-                    } else {
-                        lines[i] = `<li class="robert-markdown-oli">${content}</li>`;
+                // Détecter le niveau d'indentation (espaces ou tabs au début)
+                const indentMatch = line.match(/^(\s*)/);
+                const indentLevel = indentMatch ? Math.floor(indentMatch[1].length / 2) : 0; // 2 espaces = 1 niveau
+                
+                // Liste ordonnée avec indentation
+                if (/^\d+\.\s+/.test(trimmedLine)) {
+                    const content = trimmedLine.replace(/^\d+\.\s+/, '');
+                    
+                    // Fermer les listes plus profondes
+                    while (listStack.length > indentLevel) {
+                        const closedList = listStack.pop();
+                        processedLines.push(`</${closedList.type}>`);
                     }
-                    inUnorderedList = false;
-                } 
-                // Liste non ordonnée (améliorer la détection)
-                else if (/^[-*+]\s+/.test(line)) {
-                    const content = line.replace(/^[-*+]\s+/, '');
-                    if (!inUnorderedList) {
-                        lines[i] = `<ul class="robert-markdown-ul"><li class="robert-markdown-li">${content}</li>`;
-                        inUnorderedList = true;
-                    } else {
-                        lines[i] = `<li class="robert-markdown-li">${content}</li>`;
+                    
+                    // Ouvrir une nouvelle liste si nécessaire
+                    if (listStack.length === indentLevel) {
+                        processedLines.push('<ol class="robert-markdown-ol">');
+                        listStack.push({ type: 'ol', level: indentLevel });
                     }
-                    inOrderedList = false;
-                } 
-                // Fermer les listes si nécessaire
+                    
+                    processedLines.push(`<li class="robert-markdown-oli">${content}</li>`);
+                }
+                // Liste non ordonnée avec indentation (supporter •, -, *, +)
+                else if (/^[•\-*+]\s+/.test(trimmedLine)) {
+                    const content = trimmedLine.replace(/^[•\-*+]\s+/, '');
+                    
+                    // Fermer les listes plus profondes
+                    while (listStack.length > indentLevel) {
+                        const closedList = listStack.pop();
+                        processedLines.push(`</${closedList.type}>`);
+                    }
+                    
+                    // Ouvrir une nouvelle liste si nécessaire
+                    if (listStack.length === indentLevel) {
+                        processedLines.push('<ul class="robert-markdown-ul">');
+                        listStack.push({ type: 'ul', level: indentLevel });
+                    }
+                    
+                    processedLines.push(`<li class="robert-markdown-li">${content}</li>`);
+                }
+                // Ligne normale - fermer toutes les listes ouvertes
+                else if (trimmedLine && !trimmedLine.startsWith('<')) {
+                    // Fermer toutes les listes ouvertes
+                    while (listStack.length > 0) {
+                        const closedList = listStack.pop();
+                        processedLines.push(`</${closedList.type}>`);
+                    }
+                    processedLines.push(line);
+                }
+                // Ligne vide ou HTML - garder tel quel
                 else {
-                    if (inOrderedList) {
-                        lines[i-1] += '</ol>';
-                        inOrderedList = false;
-                    }
-                    if (inUnorderedList) {
-                        lines[i-1] += '</ul>';
-                        inUnorderedList = false;
-                    }
+                    processedLines.push(line);
                 }
             }
             
-            // Fermer les listes à la fin si nécessaire
-            if (inOrderedList) {
-                lines[lines.length - 1] += '</ol>';
+            // Fermer toutes les listes restantes à la fin
+            while (listStack.length > 0) {
+                const closedList = listStack.pop();
+                processedLines.push(`</${closedList.type}>`);
             }
-            if (inUnorderedList) {
-                lines[lines.length - 1] += '</ul>';
-            }
-              html = lines.join('');
+            
+            html = processedLines.join('\n');
             
             // 6. FORMATAGE DE TEXTE AMÉLIORÉ - APRÈS les listes
             // D'abord échapper les caractères HTML (sauf ceux déjà protégés)

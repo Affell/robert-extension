@@ -350,43 +350,93 @@ class RobertPopup {    constructor() {
             this.setStatus("Erreur: recharger extension", "error");
             console.error("Erreur:", error);
         }
-    }
-
-    async verifyPage() {
+    }    async verifyPage() {
         this.setStatus("Vérification en cours...", "loading");
         
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             
+            // Extraire uniquement le contenu texte pertinent de la page
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                function: () => document.documentElement.outerHTML
+                function: () => {
+                    // Fonction pour extraire le contenu texte principal
+                    function extractMainContent() {
+                        // Supprimer les éléments non pertinents
+                        const elementsToRemove = document.querySelectorAll(
+                            'script, style, nav, header, footer, aside, .sidebar, .menu, .navigation, .ads, .advertisement'
+                        );
+                        
+                        // Créer une copie du document pour ne pas modifier l'original
+                        const clone = document.cloneNode(true);
+                        
+                        // Supprimer les éléments non pertinents de la copie
+                        const cloneElementsToRemove = clone.querySelectorAll(
+                            'script, style, nav, header, footer, aside, .sidebar, .menu, .navigation, .ads, .advertisement'
+                        );
+                        cloneElementsToRemove.forEach(el => el.remove());
+                        
+                        // Récupérer le contenu principal
+                        const mainSelectors = [
+                            'main',
+                            'article', 
+                            '.content',
+                            '.main-content',
+                            '.post-content',
+                            '.entry-content',
+                            '#content',
+                            '#main',
+                            '.container'
+                        ];
+                        
+                        let mainContent = '';
+                        
+                        // Essayer de trouver le contenu principal
+                        for (const selector of mainSelectors) {
+                            const element = clone.querySelector(selector);
+                            if (element) {
+                                mainContent = element.textContent || element.innerText || '';
+                                if (mainContent.trim().length > 200) {
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Si pas de contenu principal trouvé, prendre le body
+                        if (!mainContent || mainContent.trim().length < 200) {
+                            mainContent = clone.body ? (clone.body.textContent || clone.body.innerText || '') : '';
+                        }
+                        
+                        // Nettoyer le texte
+                        return mainContent
+                            .replace(/\s+/g, ' ')  // Remplacer les espaces multiples par un seul
+                            .replace(/\n\s*\n/g, '\n')  // Supprimer les lignes vides multiples
+                            .trim();
+                    }
+                    
+                    return extractMainContent();
+                }
             });
             
-            const htmlContent = results[0].result;
+            const textContent = results[0].result;
             
-            // Préparer le contenu de la page pour l'analyse - limité à 8000 chars pour laisser de la place au prompt
-            const pageContent = `
-Titre: ${tab.title}
-
-Contenu HTML:
-${htmlContent.substring(0, 8000)}
-            `.trim();
-            
-            // Vérifier que le contenu total ne dépasse pas 10000 caractères
+            // Préparer le contenu de la page pour l'analyse - limité à 6000 chars pour laisser de la place au prompt
             const prompt = `Analyse cette page web et donne-moi un score de confiance de 0 à 100 ainsi qu'une évaluation de sa fiabilité:
 
+Titre: ${tab.title}
+
+Contenu:
 `;
-            const maxContentLength = 10000 - prompt.length - tab.title.length - 20; // 20 pour les labels
             
-            const finalContent = pageContent.length > maxContentLength 
-                ? pageContent.substring(0, maxContentLength) 
-                : pageContent;
+            const maxContentLength = 8000 - prompt.length;
+            const finalTextContent = textContent.length > maxContentLength 
+                ? textContent.substring(0, maxContentLength) + "..."
+                : textContent;
             
             // Préparer les données à envoyer avec URL séparée
             const dataToSend = {
                 url: tab.url,
-                body: prompt + finalContent
+                body: prompt + finalTextContent
             };
             
             const verificationResult = await this.callPageAnalysisAPI(dataToSend);
@@ -415,38 +465,93 @@ ${htmlContent.substring(0, 8000)}
             this.setStatus("Erreur de vérification", "error");
             this.hideAnalysisResult();
         }
-    }
-
-    async summarizePage() {
+    }    async summarizePage() {
         this.setStatus("Résumé en cours...", "loading");
         
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             
+            // Extraire uniquement le contenu texte pertinent de la page
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                function: () => document.documentElement.outerHTML
+                function: () => {
+                    // Fonction pour extraire le contenu texte principal
+                    function extractMainContent() {
+                        // Supprimer les éléments non pertinents
+                        const elementsToRemove = document.querySelectorAll(
+                            'script, style, nav, header, footer, aside, .sidebar, .menu, .navigation, .ads, .advertisement'
+                        );
+                        
+                        // Créer une copie du document pour ne pas modifier l'original
+                        const clone = document.cloneNode(true);
+                        
+                        // Supprimer les éléments non pertinents de la copie
+                        const cloneElementsToRemove = clone.querySelectorAll(
+                            'script, style, nav, header, footer, aside, .sidebar, .menu, .navigation, .ads, .advertisement'
+                        );
+                        cloneElementsToRemove.forEach(el => el.remove());
+                        
+                        // Récupérer le contenu principal
+                        const mainSelectors = [
+                            'main',
+                            'article', 
+                            '.content',
+                            '.main-content',
+                            '.post-content',
+                            '.entry-content',
+                            '#content',
+                            '#main',
+                            '.container'
+                        ];
+                        
+                        let mainContent = '';
+                        
+                        // Essayer de trouver le contenu principal
+                        for (const selector of mainSelectors) {
+                            const element = clone.querySelector(selector);
+                            if (element) {
+                                mainContent = element.textContent || element.innerText || '';
+                                if (mainContent.trim().length > 200) {
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Si pas de contenu principal trouvé, prendre le body
+                        if (!mainContent || mainContent.trim().length < 200) {
+                            mainContent = clone.body ? (clone.body.textContent || clone.body.innerText || '') : '';
+                        }
+                        
+                        // Nettoyer le texte
+                        return mainContent
+                            .replace(/\s+/g, ' ')  // Remplacer les espaces multiples par un seul
+                            .replace(/\n\s*\n/g, '\n')  // Supprimer les lignes vides multiples
+                            .trim();
+                    }
+                    
+                    return extractMainContent();
+                }
             });
             
-            const htmlContent = results[0].result;
+            const textContent = results[0].result;
             
-            // Préparer le contenu de la page pour le résumé - limité pour ne pas dépasser 10000 chars
+            // Préparer le contenu de la page pour le résumé - limité pour ne pas dépasser 8000 chars
             const prompt = `Résume cette page web de manière concise et structurée:
 
-`;
-            const maxContentLength = 10000 - prompt.length - tab.title.length - 20; // 20 pour les labels
-            
-            const pageContent = `
 Titre: ${tab.title}
 
-Contenu HTML:
-${htmlContent.substring(0, Math.min(htmlContent.length, maxContentLength - 100))}
-            `.trim();
+Contenu:
+`;
+            
+            const maxContentLength = 8000 - prompt.length;
+            const finalTextContent = textContent.length > maxContentLength 
+                ? textContent.substring(0, maxContentLength) + "..."
+                : textContent;
             
             // Préparer les données à envoyer
             const dataToSend = {
                 url: tab.url,
-                body: prompt + pageContent
+                body: prompt + finalTextContent
             };
             
             const summaryResult = await this.callPageResumeAPI(dataToSend);
@@ -466,7 +571,7 @@ ${htmlContent.substring(0, Math.min(htmlContent.length, maxContentLength - 100))
             this.setStatus("Erreur de résumé", "error");
             this.hideAnalysisResult();
         }
-    }    async checkEmail() {
+    }async checkEmail() {
         this.setStatus("Analyse email en cours...", "loading");
         
         try {
