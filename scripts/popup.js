@@ -1,7 +1,7 @@
 class RobertPopup {
   constructor() {
     console.log("=== Initialisation de RobertPopup ===");
-    this.apiBaseUrl = "http://localhost:5000";
+    this.apiBaseUrl = "https://api.robertai.fr";
     this.isLoggedIn = false;
 
     // Utiliser setTimeout pour s'assurer que le DOM est complètement chargé
