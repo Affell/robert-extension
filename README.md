@@ -1,142 +1,83 @@
 # Extension Robert IA
 
-Extension Chrome pour interagir avec l'IA Robert depuis n'importe quelle page web.
+Cette extension Chrome permet de discuter avec l'assistant **Robert IA** et d'analyser le contenu des pages ou emails visités. Le code s'appuie sur un service API local (`http://localhost:5000`) pour toutes les fonctionnalités d'IA.
 
-## 🚀 Installation et Test en Mode Développeur
+## 🚀 Installation en mode développeur
 
-### Prérequis
-- Google Chrome ou Chromium
-- Fichiers de l'extension dans ce dossier
+1. Ouvrir la page `chrome://extensions/` dans Chrome.
+2. Activer le **Mode développeur** en haut à droite.
+3. Cliquer sur **Charger l'extension non empaquetée** puis sélectionner le dossier `robert-extension`.
+4. Facultatif : épingler l'extension via l'icône puzzle pour un accès rapide.
 
-### Étapes pour tester l'extension
+## ⌨️ Raccourci clavier
 
-1. **Ouvrir Chrome et aller aux extensions**
-   ```
-   chrome://extensions/
-   ```
+Par défaut l'ouverture de la popup principale se fait avec :
+- **Ctrl+Shift+E** sur Windows/Linux
+- **Cmd+Shift+E** sur macOS
 
-2. **Activer le mode développeur**
-   - Cliquer sur le bouton "Mode développeur" en haut à droite
-   - Il doit être activé (bleu)
+La combinaison peut être modifiée dans `chrome://extensions/shortcuts`.
 
-3. **Charger l'extension**
-   - Cliquer sur "Charger l'extension non empaquetée"
-   - Sélectionner le dossier `robert-extension`
-   - L'extension apparaît dans la liste
+## Fonctionnalités principales
 
-4. **Épingler l'extension**
-   - Cliquer sur l'icône puzzle dans la barre d'outils Chrome
-   - Cliquer sur l'épingle à côté de "Extension Robert IA"
+- **Chat IA** : conversation instantanée avec Robert depuis la popup ou le widget intégré aux pages.
+- **Vérifier** : analyse de fiabilité de la page courante via l'API `/chat/page/analyze`.
+- **Résumer** : résumé automatique du texte principal de la page avec `/chat/page/resume`.
+- **Email** : extraction et analyse d'un email ouvert pour détecter le phishing (`/chat/mail`).
 
-## ⌨️ Raccourci Clavier
+Sur les domaines de l'UPHF (`ent.uphf.fr`, `mail.uphf.fr`, `moodle.uphf.fr`), un logo flottant apparaît pour ouvrir directement le chat.
 
-L'extension propose un raccourci clavier pour un accès rapide :
-
-### Windows/Linux
-- **Ctrl+Shift+E** : Ouvrir la popup principale
-
-### macOS
-- **Cmd+Shift+E** : Ouvrir la popup principale
-
-### Personnaliser le raccourci
-1. Aller à `chrome://extensions/shortcuts`
-2. Trouver "Extension Robert IA"
-3. Modifier la combinaison selon vos préférences
-
-## 🎯 Fonctionnalités Spéciales UPHF
-
-L'extension détecte automatiquement les sites UPHF et affiche des fonctionnalités supplémentaires :
-
-### Sites supportés
-- **https://ent.uphf.fr/** - ENT UPHF
-- **https://mail.uphf.fr/** - Messagerie UPHF  
-- **https://moodle.uphf.fr/** - Moodle UPHF
-
-### Logo flottant
-Sur ces sites, un logo Robert IA apparaît en bas à droite de la page :
-- 🔥 **Animation flottante** pour attirer l'attention  
-- 💬 **Clic direct** pour ouvrir le chat avec Robert
-- 🎯 **Tooltip informatif** au survol
-- ✨ **Design discret** qui s'intègre naturellement
-
-**Note** : Pour accéder à toutes les fonctionnalités (Vérifier, Résumer, Email), utilisez l'icône d'extension dans la barre d'outils Chrome ou le raccourci **Ctrl+Shift+E**.
-
-## 📧 **EMAIL**
-- **Détecte** automatiquement si vous êtes sur Gmail/Outlook/Yahoo/Zimbra
-- **Extrait** le contenu et sujet de l'email ouvert
-- **Analyse** les risques de phishing
-- **Alerte** si l'email semble dangereux
-
-#### Providers d'email supportés :
-- **Gmail** - Interface web standard
-- **Outlook** - Outlook Web App
-- **Yahoo Mail** - Interface web
-- **Zimbra** - Serveur de messagerie UPHF et entreprises
-
-## 🔧 Structure du Projet
+## Architecture des fichiers
 
 ```
 robert-extension/
-├── manifest.json              # Configuration de l'extension
-├── scripts/
-│   ├── popup.js              # Logique du popup principal
-│   ├── content.js            # Script injecté + détection UPHF
-│   └── background.js         # Service worker
-├── styles/
-│   ├── popup.css             # Styles du popup principal
-│   └── content.css           # Styles du chat widget + logo flottant
-├── templates/
-│   ├── popup.html            # Interface du popup principal
-│   ├── chat-widget.html      # Template HTML du chat widget
-│   ├── chat-welcome.html     # Template HTML du message de bienvenue
-│   └── floating-logo.html    # Template HTML du logo flottant
+├── manifest.json              # Déclaration de l'extension
+├── scripts/                   # Logique JavaScript
+│   ├── background.js          # Service worker (API, ouverture de popup)
+│   ├── content.js             # Injecté dans toutes les pages (logo flottant, widget)
+│   ├── chat-popup.js          # Fenêtre de chat utilisée par content.js
+│   └── popup.js               # Gestion complète de la popup et de l'authentification
+├── templates/                 # Vues HTML réutilisables
+│   ├── popup.html
+│   ├── chat-widget.html
+│   ├── chat-popup.html
+│   └── floating-logo.html
+├── styles/                    # Feuilles de style CSS
+│   ├── popup.css
+│   ├── content.css
+│   └── chat-popup.css
 ├── icons/
-│   └── logo_robert.png       # Logo de l'extension
-└── README.md                 # Documentation
+│   └── logo_Robert.png        # Icône principale
+├── build.ps1 / package.bat    # Scripts pour générer une archive ZIP
+└── dist/                      # Dossiers de sortie du packaging
+    └── robert-extension-*.zip
 ```
 
-### 🐛 Débogage
+### Composants JavaScript
 
-**Méthode Rapide : Section "Erreurs"**
-1. Aller à `chrome://extensions/`
-2. Cliquer sur **"Erreurs"** (bouton rouge s'il y a des erreurs)
-3. Voir toutes les erreurs centralisées avec stack trace complète
+- **popup.js** gère l'interface principale : connexion de l'utilisateur, boutons d'action (chat, vérification de page, résumé, analyse d'email) et communication avec l'API. Les tokens sont conservés dans `chrome.storage.local`.
+- **content.js** est injecté sur toutes les pages. Il affiche le logo flottant sur les sites UPHF et peut créer un widget de chat intégré. L'historique de conversation est stocké côté utilisateur.
+- **chat-popup.js** définit la petite fenêtre de chat utilisée quand le widget est ouvert depuis `content.js`.
+- **background.js** agit comme service worker : il recharge les content scripts après mise à jour et relaie les requêtes vers l'API locale, évitant ainsi les restrictions CORS.
 
-**Autres Consoles de Débogage**
-- **Console du Background Script** : `chrome://extensions/` → "Inspecter les vues : service worker"
-- **Console du Popup** : Ouvrir popup → Clic droit → "Inspecter l'élément"
-- **Console de la Page Web** : F12 pour voir les logs du content script
+### Packaging
 
-### 🔄 Rechargement après Modifications
+Le script PowerShell `build.ps1` (ou `package.bat` sous Windows) crée une archive ZIP de l'extension dans le dossier `dist/`. Cette archive peut être envoyée au Chrome Web Store ou installée manuellement via `chrome://extensions`.
 
-Après chaque modification du code :
-1. Aller à `chrome://extensions/`
-2. Cliquer sur l'icône de rechargement ↻ de l'extension
-3. Ou utiliser Ctrl+R sur la page des extensions
+## Débogage
 
-### 💡 Accès aux Fonctionnalités
+- Ouvrir `chrome://extensions/` et cliquer sur **Erreurs** pour afficher toutes les traces de l'extension.
+- Inspecter le **Service worker** (background.js) ou la **Popup** via les liens "Inspecter les vues".
+- Les logs du script injecté (`content.js`) sont visibles dans la console de la page visitée.
 
-**🎯 Logo flottant UPHF** : Accès direct au chat avec Robert
-**🔧 Popup d'extension** : Accès complet à toutes les fonctionnalités
-**⌨️ Raccourci clavier** : Ctrl+Shift+E pour ouvrir la popup
-**👤 Mon Compte** : Redirection vers ENT UPHF pour connexion (temporaire)
+## Système d'authentification
 
-### 🔐 Système de Connexion
+La popup comporte un formulaire de connexion qui envoie les identifiants à l'API `/auth/login`. Après authentification :
+1. le token est stocké en local ;
+2. l'état connecté est communiqué aux content scripts ;
+3. la popup permet la déconnexion via `/auth/logout`.
 
-L'extension propose une section "Mon Compte" qui :
-- **Affiche** l'état de connexion (connecté/non connecté)
-- **Redirige** vers le site externe pour l'authentification
-- **Stocke** les informations de session localement
-- **Permet** la déconnexion depuis l'extension
+L'extension se base sur ces informations pour autoriser les appels aux fonctionnalités d'IA.
 
-**Note** : Actuellement configuré pour rediriger vers l'ENT UPHF en attendant l'intégration du site Robert IA.
+---
 
-### 💡 Architecture
-
-L'extension suit maintenant une architecture propre avec séparation des préoccupations :
-- **HTML** : Templates dans le dossier `templates/`
-- **CSS** : Styles dans le dossier `styles/`
-- **JavaScript** : Logique dans le dossier `scripts/`
-
-Cette séparation améliore la maintenabilité et suit les bonnes pratiques de développement.
-
+Ce dépôt contient donc l'intégralité des ressources nécessaires pour exécuter et empaqueter l'extension Robert IA.
