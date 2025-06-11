@@ -24,9 +24,9 @@ class RobertPopup {    constructor() {
         this.verifyBtn = document.getElementById("verify-btn");
         this.summarizeBtn = document.getElementById("summarize-btn");
         this.emailBtn = document.getElementById("email-btn");
-        
-        // Éléments du compte
+          // Éléments du compte
         this.accountBtn = document.getElementById("account-btn");
+        this.closeBtn = document.getElementById("close-btn");
         this.backBtn = document.getElementById("back-btn");
         this.logoutBtn = document.getElementById("logout-btn");
         this.helpBtnLogged = document.getElementById("help-btn-logged");
@@ -63,12 +63,17 @@ class RobertPopup {    constructor() {
         if (this.emailBtn) {
             this.emailBtn.addEventListener("click", () => this.checkEmail());
         }
-        
-        // Navigation du compte
+          // Navigation du compte
         if (this.accountBtn) {
             this.accountBtn.addEventListener("click", () => {
                 console.log('Bouton Mon Compte cliqué');
                 this.showAccountSection();
+            });
+        }
+        if (this.closeBtn) {
+            this.closeBtn.addEventListener("click", () => {
+                console.log('Bouton fermeture cliqué');
+                window.close();
             });
         }
         if (this.backBtn) {
@@ -1806,24 +1811,34 @@ Contenu:
             console.log('Popup réduite à 600px de hauteur fixe');
         }, 100);
     }    formatAnalysisText(text) {
-        // Convertir le texte brut en HTML formaté avec optimisation pour espace restreint
+        // Convertir le texte brut en HTML formaté avec support complet du markdown
         let formatted = text
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br>')
             .replace(/^/, '<p>')
             .replace(/$/, '</p>')
-            // MODIFICATION: Supprimer les puces en les convertissant en paragraphes simples
-            .replace(/- (.+?)(<br>|<\/p>)/g, '<p>$1</p>')
-            // Ne plus créer de listes - la ligne suivante est commentée
-            // .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            // Restaurer les listes à puces avec formatage correct
+            .replace(/- (.+?)(<br>|<\/p>)/g, '<li>$1</li>')
+            // Créer les listes UL autour des éléments LI
+            .replace(/(<li>.*?<\/li>(?:<br>|<\/p>|<li>.*?<\/li>)*)/gs, '<ul>$1</ul>')
+            // Nettoyer les balises parasites dans les listes
+            .replace(/<ul>([^<]*)<li>/g, '<ul><li>')
+            .replace(/<\/li>([^<]*)<\/ul>/g, '</li></ul>')
+            // Formatage en gras et italique
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>');
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            // Formatage des liens (ne pas casser les boutons existants)
+            .replace(/(?<!<button[^>]*?)(https?:\/\/[^\s<>]+)(?![^<]*<\/button>)/gi, '<a href="$1" target="_blank" rel="noopener">$1</a>');
         
         // Optimiser l'affichage pour l'espace restreint
         formatted = formatted
             .replace(/<p><\/p>/g, '') // Supprimer les paragraphes vides
             .replace(/<br><br>/g, '<br>') // Réduire les doubles sauts de ligne
-            .replace(/(<p>.*?<\/p>)\s*(<p>.*?<\/p>)/g, '$1$2'); // Réduire l'espacement entre paragraphes
+            .replace(/<p><br>/g, '<p>') // Nettoyer les paragraphes avec br en début
+            .replace(/<br><\/p>/g, '</p>') // Nettoyer les paragraphes avec br en fin
+            // Nettoyer les listes mal formées
+            .replace(/<\/ul><br><ul>/g, '')
+            .replace(/<ul><\/ul>/g, '');
         
         return formatted;
     }

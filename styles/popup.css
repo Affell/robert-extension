@@ -203,6 +203,13 @@ body {
     line-height: 1;
 }
 
+/* Boutons de l'en-tête */
+.header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* Bouton Mon Compte */
 .account-btn {
     background: #2a2a2a;
@@ -227,6 +234,34 @@ body {
 .account-icon {
     font-size: 1.25rem;
     color: #f97316;
+}
+
+/* Bouton de fermeture */
+.close-btn {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+}
+
+.close-btn:hover {
+    background: #ff4444;
+    border-color: #ff6666;
+    transform: scale(1.05);
+}
+
+.close-icon {
+    font-size: 1.5rem;
+    color: #ffffff;
+    font-weight: bold;
+    line-height: 1;
 }
 
 /* Section Mon Compte */
