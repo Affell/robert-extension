@@ -2268,17 +2268,13 @@ Contenu:
             if (passwordField) passwordField.value = '';
         }
         this.hideLoginError();
-    }
-
-    createAccount() {
+    }    createAccount() {
         this.setStatus("Redirection...", "loading");
-        chrome.tabs.create({ url: `${this.apiBaseUrl}/register` });
+        chrome.tabs.create({ url: "https://robertai.fr/login" });
         setTimeout(() => window.close(), 500);
-    }
-
-    openHelp() {
-        this.setStatus("Ouverture aide...", "loading");
-        chrome.tabs.create({ url: `${this.apiBaseUrl}/help` });
+    }    openHelp() {
+        this.setStatus("Ouverture à propos...", "loading");
+        chrome.tabs.create({ url: "https://robertai.fr/about" });
         setTimeout(() => this.setStatus("Prêt à vous aider", "ready"), 1000);
     }
 
